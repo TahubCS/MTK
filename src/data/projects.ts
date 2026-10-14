@@ -110,6 +110,7 @@ export interface BenchItem {
 
 const CC_SRC = 'https://github.com/TahubCS/Context-Compiler/blob/6b6a0f8d395d9cde51f9a7ff40daab24dfc4ca72';
 const CG_SRC = 'https://github.com/TahubCS/cognigraph/blob/54613848a6a1bc03fb5cb5ff8ee2974af225bc72';
+const RF_SRC = 'https://github.com/TahubCS/Reeflect/blob/a435424f847d7fa890f93720ad56d462ffc8f421';
 
 export const projects: Project[] = [
   {
@@ -580,17 +581,145 @@ export const projects: Project[] = [
     limits:
       'There is no automated test suite yet, and answers do not carry sentence-level citations. Uploaded content goes to third-party storage and AI providers. The link is the web app; document processing runs in a separate worker. No retrieval-quality numbers are claimed because none have been measured.',
   },
+  {
+    slug: 'reeflect',
+    fig: '05',
+    name: 'Reeflect',
+    category: 'Personal finance / Messaging agent',
+    layer: 'api',
+    tagline: 'Personal finance that lives in your texts, where the AI never writes a number.',
+    summary:
+      'You text it what you spent or ask how you’re doing, and it answers with what you can spend per day until payday. On the web the same figures sit on a cash-flow calendar. Code looks up every amount; the model only writes the words around them.',
+    stack: ['Next.js', 'TypeScript', 'Drizzle', 'Neon', 'Gemini', 'Photon'],
+    status: 'Live · HackNC 2026',
+    role: 'The iMessage agent: the Photon worker, the turn endpoint, and answering, logging and receipt photos by text. Also budgets, recurring payments and bills, category rules, transfer review and CI',
+    team: 'Team of three',
+    timeline: 'October 2026',
+    live: 'https://reeflect.app/',
+    source: 'https://github.com/TahubCS/Reeflect',
+    shot: {
+      src: '/shots/reeflect.jpg',
+      alt: 'Reeflect landing page with the headline “Reeflect lives in your texts” beside a sample panel showing a daily spending figure and a balance chart.',
+      captured: 'Oct 2026',
+    },
+    drawing: {
+      id: 'RF-005',
+      title: 'One text · message → reply',
+      steps: [
+        { tag: '01 · iPhone', title: 'A text arrives', note: 'iMessage · Photon Spectrum' },
+        { tag: '02 · Worker', title: 'Relay only', note: 'no database, no model, no business logic' },
+        { tag: '03 · Next.js API', title: 'Look up the figures', note: 'code reads balances, bills and budgets', emphasis: true },
+        { tag: '04 · Gemini', title: 'Write the sentences', note: 'sees labels like {cash_total}, never amounts' },
+        { tag: '05 · Code', title: 'Fill in and check', note: 'real values in; a digit scan rejects model-written numbers' },
+        { tag: '06 · Out', title: 'Reply by text', note: 'the same figures the website shows' },
+      ],
+      caption: 'The model chooses words. Every number in a reply is put there by code.',
+    },
+    problem: [
+      'Most budgeting apps ask you to open them, and most people stop. A text thread is already open. But a finance assistant that invents a balance is worse than no assistant at all.',
+      'Reeflect answers by text with the same figures its website shows, and is built so that a language model cannot be the source of any number a person reads.',
+    ],
+    decisions: [
+      {
+        title: 'The model never produces a number',
+        body: 'Code works out the figures first. Gemini gets label names and plain-word notes, writes the sentences, and code fills the labels in. A digit scan then rejects any reply where the model wrote a number itself.',
+        evidence: { label: 'digitScan.ts', href: `${RF_SRC}/src/lib/ai/digitScan.ts` },
+      },
+      {
+        title: 'The worker only relays',
+        body: 'The process holding the iMessage connection passes each text to the app and sends back the reply. It never touches the database, the bank sandbox or the model, so all the logic lives in one place.',
+        evidence: { label: 'relay.ts', href: `${RF_SRC}/agent-worker/src/relay.ts` },
+      },
+      {
+        title: 'A texted amount must be in the text',
+        body: 'For “12 lunch”, code extracts the amount from the message and the model only proposes a category. An ambiguous amount gets a question back, not a guess.',
+        evidence: { label: 'logSpending.ts', href: `${RF_SRC}/src/features/agent/server/tools/logSpending.ts` },
+      },
+      {
+        title: 'Texts and the website cannot disagree',
+        body: 'The reply to “how am I doing?” uses the calendar’s own summary on the same data the dashboard loads, so the two are one calculation, not two.',
+        evidence: { label: 'ADR-059', href: `${RF_SRC}/docs/DECISIONS.md` },
+      },
+      {
+        title: 'Money is integer cents',
+        body: 'Amounts are stored and calculated as whole cents through one money module, so nothing drifts through floating-point arithmetic.',
+        evidence: { label: 'money/index.ts', href: `${RF_SRC}/src/lib/money/index.ts` },
+      },
+    ],
+    built: [
+      { title: 'iMessage agent worker', path: 'agent-worker/src', href: `${RF_SRC}/agent-worker/src` },
+      { title: 'Agent turn endpoint', path: 'src/app/api/agent/turn/route.ts', href: `${RF_SRC}/src/app/api/agent/turn/route.ts` },
+      { title: 'Answers, logging & receipts by text', path: 'src/features/agent', href: `${RF_SRC}/src/features/agent` },
+      { title: 'Budgets, recurring payments & bills', detail: 'web pages and the figures the agent reads' },
+    ],
+    history: [
+      {
+        label: 'Stage 1',
+        title: 'A month as a calendar',
+        summary: 'Paydays, bills, subscriptions and spending sit on the days they happen, with a balance line and a per-day spending headline.',
+        diff: [
+          { op: '+', text: 'cash-flow calendar on the workspace’s accounts' },
+          { op: '+', text: 'statement imports, parsed by code' },
+        ],
+        screen: { kind: 'cards', heading: 'October', cards: [{ label: 'Bills due' }, { label: 'Payday · Oct 15', lit: true }, { label: 'Per day until then' }] },
+      },
+      {
+        label: 'Stage 2',
+        title: 'The phone can reach the app',
+        summary: 'A worker keeps the iMessage connection open and relays each text to one endpoint in the app.',
+        diff: [
+          { op: '+', text: 'agent-worker: Spectrum connection, relay only' },
+          { op: '+', text: '/api/agent/turn' },
+        ],
+        mine: true,
+        screen: { kind: 'flow', heading: 'One text', nodes: [{ label: 'iMessage' }, { label: 'worker', lit: true }, { label: 'app' }, { label: 'reply' }] },
+      },
+      {
+        label: 'Stage 3',
+        title: '“How am I doing?”',
+        summary: 'The agent answers with code-supplied figures: the balance, what is owed before payday, and what is left per day.',
+        diff: [
+          { op: '+', text: 'figures looked up in code' },
+          { op: '+', text: 'model writes around labels; digit scan on every reply' },
+        ],
+        mine: true,
+        screen: {
+          kind: 'chat',
+          heading: 'Reeflect',
+          messages: [
+            { from: 'user', text: 'how am I doing?' },
+            { from: 'ai', text: 'You have $469.42 today, and $165.88 is owed before payday on Oct 15. That leaves about $37.94 a day.' },
+          ],
+        },
+      },
+      {
+        label: 'Stage 4',
+        title: 'Log it by text',
+        summary: 'Spending is logged from a message, questions about categories and budgets get exact answers, and a receipt photo becomes a proposal that is saved only on yes.',
+        diff: [
+          { op: '+', text: '“12 lunch” → logged, with UNDO' },
+          { op: '+', text: 'category, budget, bill and account questions' },
+          { op: '+', text: 'receipt photo → proposed transaction, saved on confirm' },
+        ],
+        mine: true,
+        screen: {
+          kind: 'chat',
+          heading: 'Reeflect',
+          messages: [
+            { from: 'user', text: 'spent 12 on lunch' },
+            { from: 'ai', text: 'Logged $12.00 for Lunch. You have $469.42 today…' },
+          ],
+        },
+      },
+    ],
+    limits:
+      'All financial data is synthetic: the bank connection is Capital One’s Nessie sandbox, and the figures in the example replies are the sample data from the public page. Reeflect never moves money and gives no investment advice. Receipt photos are off unless a flag is set. No accuracy or usage figures are claimed because none have been measured.',
+    credits:
+      'Built for HackNC 2026 with Jacob Heminway and Simon Ormond. Auth, accounts, statement imports, the calendar on live accounts and text alerts are largely Simon’s work; insights, the Nessie sync and the synthetic data generator are largely Jacob’s.',
+  },
 ];
 
 export const bench: BenchItem[] = [
-  {
-    name: 'Reeflect',
-    summary:
-      'Personal finance for everyday people, with an iMessage agent built on Photon and Capital One’s Nessie data. HackNC 2026, team of three.',
-    stack: 'Next.js / Drizzle / Neon / Gemini',
-    status: 'In progress',
-    href: 'https://reeflect.app/',
-  },
   {
     name: 'SpecThread',
     summary:
