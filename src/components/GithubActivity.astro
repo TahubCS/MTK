@@ -1,0 +1,107 @@
+---
+/**
+ * Recent activity, read from GitHub in the browser on each visit
+ * (scripts/github-activity.ts). Without JavaScript this is a heading and
+ * a link to the profile.
+ */
+import { site } from '../data/site';
+
+const user = new URL(site.links.github).pathname.replace(/^\/|\/$/g, '');
+---
+
+<section
+  id="activity"
+  class="wrap activity"
+  aria-labelledby="activity-title"
+  data-github-activity
+  data-github-user={user}
+>
+  <div class="activity__head">
+    <h2 id="activity-title" class="label">Recent activity</h2>
+    <a class="label label--muted" href={site.links.github} rel="noopener">Live from github.com/{user} ↗</a>
+  </div>
+  <p class="activity__status" data-activity-status aria-live="polite">Loading the latest pushes…</p>
+  <ul class="activity__list" data-activity-list hidden></ul>
+  <noscript>
+    <p class="activity__status">This list needs JavaScript. The link above goes to the same information.</p>
+  </noscript>
+</section>
+
+<script>
+  import { initGithubActivity } from '../scripts/github-activity';
+  // Fire and forget: failures are reported inside the section itself.
+  void initGithubActivity();
+</script>
+
+<style>
+  .activity {
+    padding-top: 56px;
+  }
+
+  .activity__head {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 8px 24px;
+    padding-bottom: 20px;
+    border-bottom: var(--line) solid var(--ink);
+  }
+
+  .activity__head a {
+    text-decoration: none;
+  }
+
+  .activity__head a:hover {
+    color: var(--accent);
+  }
+
+  .activity__status {
+    padding: 20px 0;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  :global(.js) .activity noscript,
+  :global(html:not(.js)) .activity [data-activity-status] {
+    display: none;
+  }
+
+  /* Rows are created by the script, so they are styled globally. */
+  .activity :global(.activity__item) {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 8px 32px;
+    padding: 16px 0;
+    border-bottom: 1px solid var(--rule-soft);
+  }
+
+  .activity :global(.activity__name) {
+    flex: 0 0 220px;
+    font-family: var(--font-mono);
+    font-size: 14px;
+    font-weight: 600;
+    word-break: break-word;
+  }
+
+  .activity :global(.activity__summary) {
+    flex: 1 1 360px;
+    font-size: 15px;
+    line-height: 1.5;
+    color: var(--ink-soft);
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    overflow: hidden;
+  }
+
+  .activity :global(.activity__meta) {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+</style>

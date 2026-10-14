@@ -5,6 +5,7 @@ import Footer from '../components/Footer.astro';
 import TitleBlock from '../components/TitleBlock.astro';
 import ExplodedStack from '../components/ExplodedStack.astro';
 import ProjectSheet from '../components/ProjectSheet.astro';
+import GithubActivity from '../components/GithubActivity.astro';
 import { site } from '../data/site';
 import { projects, bench } from '../data/projects';
 import { experience } from '../data/experience';
@@ -92,6 +93,8 @@ const notes = [
         }
       </ul>
     </section>
+
+    <GithubActivity />
 
     <section id="experience" class="wrap section" aria-labelledby="experience-title">
       <div class="experience">
