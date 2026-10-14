@@ -111,6 +111,9 @@ jobs:
 
       - name: Clone the project to describe
         id: source
+        env:
+          GH_TOKEN: ${{ github.token }}
+          OWNER: ${{ github.repository_owner }}
         run: |
           # The name came from GitHub's own repository list; check it anyway
           # before it is used in a path and a URL.
@@ -118,8 +121,20 @@ jobs:
             echo "::error::Unexpected repository name: $REPO"
             exit 1
           fi
-          git clone --depth 50 "https://github.com/${{ github.repository_owner }}/$REPO.git" ".case-study-source/$REPO"
+          # Full history, without file contents for old commits.
+          git clone --filter=blob:none "https://github.com/$OWNER/$REPO.git" ".case-study-source/$REPO"
           echo "sha=$(git -C ".case-study-source/$REPO" rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+          # Claude has no shell, so it cannot run git log itself. Give it
+          # who committed what, as files it can read.
+          {
+            echo "# Contributors by GitHub account (login, commits)"
+            gh api "repos/$OWNER/$REPO/contributors?per_page=100" --jq '.[] | "\(.login)\t\(.contributions)"'
+            echo
+            echo "# Commit authors as recorded in git (commits, name <email>)"
+            git -C ".case-study-source/$REPO" shortlog -sne HEAD
+          } > ".case-study-source/$REPO.authors.txt"
+          git -C ".case-study-source/$REPO" log --date=short --format='%h %ad %an: %s' > ".case-study-source/$REPO.history.txt"
           echo "slug=$(tr '[:upper:]' '[:lower:]' <<<"$REPO")" >> "$GITHUB_OUTPUT"
           echo "homepage=$(jq -r --arg name "$REPO" '.[] | select(.name == $name) | .homepage // ""' src/data/portfolio-repos.json)" >> "$GITHUB_OUTPUT"
 
@@ -137,7 +152,10 @@ jobs:
             Follow the instructions in .github/case-study-prompt.md.
 
             Repository: ${{ github.repository_owner }}/${{ env.REPO }}
+            Site owner's GitHub login: ${{ github.repository_owner }}
             Cloned at: .case-study-source/${{ env.REPO }}
+            Who committed: .case-study-source/${{ env.REPO }}.authors.txt
+            Commit history, newest first: .case-study-source/${{ env.REPO }}.history.txt
             Commit SHA to pin links to: ${{ steps.source.outputs.sha }}
             Website field: ${{ steps.source.outputs.homepage || 'none' }}
 
