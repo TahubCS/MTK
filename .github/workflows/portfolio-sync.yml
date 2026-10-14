@@ -1,0 +1,168 @@
+name: Portfolio sync
+
+# Keeps the site in step with GitHub.
+#
+#   sync   Every repository tagged `portfolio` is listed on the site from its
+#          GitHub details. The data file is committed straight to main.
+#   draft  For one tagged repository that has no case study yet, Claude reads
+#          the code and drafts one. It arrives as a pull request to review;
+#          nothing it writes is published until that is merged.
+#
+# Needs the ANTHROPIC_API_KEY secret for the draft job. Without it, sync
+# still runs and draft is skipped.
+
+on:
+  schedule:
+    - cron: '17 9 * * *' # daily, 09:17 UTC
+  workflow_dispatch:
+    inputs:
+      repo:
+        description: Draft a case study for this repository (name only). Blank picks the next one without a case study.
+        required: false
+        type: string
+
+concurrency:
+  group: portfolio-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      repo: ${{ steps.pick.outputs.repo }}
+      can_draft: ${{ steps.key.outputs.present }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Read tagged repositories from GitHub
+        id: sync
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/sync-portfolio-repos.mjs
+
+      - name: Publish the updated list
+        if: steps.sync.outputs.changed == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/data/portfolio-repos.json
+          git commit -m "chore: sync portfolio repositories from GitHub"
+          git push
+
+      - name: Pick a repository to draft
+        id: pick
+        env:
+          MISSING: ${{ steps.sync.outputs.missing }}
+          REQUESTED: ${{ inputs.repo }}
+        run: |
+          repo=""
+          if [ -n "$REQUESTED" ]; then
+            # Only a repository the sync step found is accepted.
+            repo=$(jq -r --arg want "$REQUESTED" '.[] | select(. == $want)' <<<"$MISSING" | head -n 1)
+            [ -n "$repo" ] || echo "::warning::'$REQUESTED' is not a tagged repository without a case study."
+          else
+            # Skip repositories that already have a draft waiting for review.
+            for candidate in $(jq -r '.[]' <<<"$MISSING"); do
+              slug=$(tr '[:upper:]' '[:lower:]' <<<"$candidate")
+              if [ -z "$(git ls-remote --heads origin "case-study/$slug")" ]; then
+                repo="$candidate"
+                break
+              fi
+            done
+          fi
+          echo "repo=$repo" >> "$GITHUB_OUTPUT"
+          echo "Next to draft: ${repo:-none}"
+
+      - name: Check for the API key
+        id: key
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          if [ -n "$ANTHROPIC_API_KEY" ]; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::ANTHROPIC_API_KEY is not set, so no case study will be drafted."
+          fi
+
+  draft:
+    needs: sync
+    if: needs.sync.outputs.repo != '' && needs.sync.outputs.can_draft == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    env:
+      REPO: ${{ needs.sync.outputs.repo }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Clone the project to describe
+        id: source
+        run: |
+          # The name came from GitHub's own repository list; check it anyway
+          # before it is used in a path and a URL.
+          if ! [[ "$REPO" =~ ^[A-Za-z0-9._-]+$ ]]; then
+            echo "::error::Unexpected repository name: $REPO"
+            exit 1
+          fi
+          git clone --depth 50 "https://github.com/${{ github.repository_owner }}/$REPO.git" ".case-study-source/$REPO"
+          echo "sha=$(git -C ".case-study-source/$REPO" rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          echo "slug=$(tr '[:upper:]' '[:lower:]' <<<"$REPO")" >> "$GITHUB_OUTPUT"
+          echo "homepage=$(jq -r --arg name "$REPO" '.[] | select(.name == $name) | .homepage // ""' src/data/portfolio-repos.json)" >> "$GITHUB_OUTPUT"
+
+      - name: Draft the case study
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          github_token: ${{ github.token }}
+          # Read and edit only: no shell, no network.
+          claude_args: >-
+            --model claude-opus-5-5
+            --max-turns 60
+            --allowedTools "Read,Glob,Grep,Edit"
+          prompt: |
+            Follow the instructions in .github/case-study-prompt.md.
+
+            Repository: ${{ github.repository_owner }}/${{ env.REPO }}
+            Cloned at: .case-study-source/${{ env.REPO }}
+            Commit SHA to pin links to: ${{ steps.source.outputs.sha }}
+            Website field: ${{ steps.source.outputs.homepage || 'none' }}
+
+      - name: Check the site still builds
+        run: |
+          rm -rf .case-study-source
+          npm ci
+          npm test
+          npm run build
+
+      - name: Open a pull request for review
+        uses: peter-evans/create-pull-request@v7
+        with:
+          branch: case-study/${{ steps.source.outputs.slug }}
+          add-paths: src/data/projects.ts
+          commit-message: 'feat: draft case study for ${{ env.REPO }}'
+          title: 'Draft case study: ${{ env.REPO }}'
+          body: |
+            Drafted by Claude from the code in `${{ github.repository_owner }}/${{ env.REPO }}` at `${{ steps.source.outputs.sha }}`.
+
+            **Read before merging.** Nothing here is published until this is merged. Check in particular:
+
+            - the role and team credit lines
+            - every claim in the decision log against the linked file
+            - the status and the known limits
+
+            The site built and its tests passed with this change. There is no screenshot; add one by hand if you want one.
+
+            🤖 Generated with [Claude Code](https://claude.com/claude-code)

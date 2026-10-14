@@ -63,3 +63,17 @@ After moving an app, update its own URL settings (auth callback URLs, Supabase r
 ## Adding a project
 
 Add an object to `projects` in `src/data/projects.ts`. Pick its `layer` (`ui`, `api` or `data`) so the homepage stack lights the right layer. The case-study page at `/projects/<slug>` is generated automatically, and sheet numbers update themselves.
+
+### Automatically, from GitHub
+
+Add the topic `portfolio` to a repository on GitHub. The **Portfolio sync** workflow (`.github/workflows/portfolio-sync.yml`) runs daily and can be run by hand from the Actions tab:
+
+1. **Listing.** Every public repository tagged `portfolio` that has no case study appears under "On the bench" with its GitHub description, language, topics and Website link. The list is `src/data/portfolio-repos.json`, committed straight to `main`. Do not edit it by hand; change the repository on GitHub instead.
+2. **Case study draft.** For one such repository per run, Claude reads the code and drafts a `projects.ts` entry following `.github/case-study-prompt.md`. It arrives as a pull request on a `case-study/<repo>` branch. Nothing it writes is published until you merge it. Once merged, the repository leaves the bench and gets its own page.
+
+Removing the `portfolio` topic takes a repository off the bench at the next run. It does not remove a merged case study.
+
+One-time setup on this repository:
+
+- **Settings → Secrets and variables → Actions:** add `ANTHROPIC_API_KEY`. Without it, listing still works and drafting is skipped.
+- **Settings → Actions → General → Workflow permissions:** choose "Read and write permissions" and tick "Allow GitHub Actions to create and approve pull requests".

@@ -15,5 +15,11 @@ npm-debug.log*
 .env
 .env.production
 
+# project cloned by the Portfolio sync workflow while drafting a case study
+.case-study-source/
+
+# browser automation output
+.playwright-mcp/
+
 # macOS
 .DS_Store

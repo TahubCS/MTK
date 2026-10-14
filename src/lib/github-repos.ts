@@ -2,7 +2,10 @@
  * Parsing for the GitHub "list user repositories" response.
  *
  * The response is untrusted: everything is checked here and turned into
- * `RepoActivity` before any of it reaches the page.
+ * `RepoActivity` or `PortfolioRepo` before any of it reaches the page.
+ *
+ * Also loaded directly by Node in scripts/sync-portfolio-repos.mjs, so it
+ * must stay free of imports and of syntax that needs compiling (no enums).
  */
 
 export interface RepoActivity {
@@ -56,6 +59,85 @@ export function parseRepoActivity(raw: unknown, limit: number): ParseResult {
 
   if (repos.length === 0) return { ok: false, error: 'No usable repositories in the response' };
   return { ok: true, repos };
+}
+
+/* ---------- portfolio repositories ---------- */
+
+/** A repository is a portfolio project when it carries this GitHub topic. */
+export const PORTFOLIO_TOPIC = 'portfolio';
+
+/**
+ * The fields the site keeps for a portfolio repository. Field names match
+ * GitHub's, so the same parser reads the API response and the synced file
+ * (src/data/portfolio-repos.json).
+ */
+export interface PortfolioRepo {
+  readonly name: string;
+  readonly html_url: string;
+  readonly description: string | null;
+  readonly language: string | null;
+  /** The repository's Website field, when it is an http(s) link. */
+  readonly homepage: string | null;
+  readonly topics: readonly string[];
+}
+
+export type PortfolioParseResult =
+  | { readonly ok: true; readonly repos: readonly PortfolioRepo[] }
+  | { readonly ok: false; readonly error: string };
+
+function httpUrlOrNull(value: unknown): string | null {
+  const text = textOrNull(value);
+  return text !== null && /^https?:\/\//.test(text) ? text : null;
+}
+
+function parsePortfolioRepo(raw: unknown): PortfolioRepo | null {
+  if (!isRecord(raw)) return null;
+  if (raw.fork === true || raw.archived === true || raw.private === true) return null;
+
+  const { name, html_url: url, topics } = raw;
+  if (typeof name !== 'string' || typeof url !== 'string') return null;
+  if (!url.startsWith('https://github.com/')) return null;
+  if (!Array.isArray(topics)) return null;
+
+  const tags = topics.filter((topic): topic is string => typeof topic === 'string');
+  if (!tags.includes(PORTFOLIO_TOPIC)) return null;
+
+  return {
+    name,
+    html_url: url,
+    description: textOrNull(raw.description),
+    language: textOrNull(raw.language),
+    homepage: httpUrlOrNull(raw.homepage),
+    topics: [...tags].sort(),
+  };
+}
+
+/**
+ * Public, non-fork, non-archived repositories tagged `portfolio`, sorted by
+ * name. An empty list is a valid result: nothing is tagged yet.
+ */
+export function parsePortfolioRepos(raw: unknown): PortfolioParseResult {
+  if (!Array.isArray(raw)) return { ok: false, error: 'Expected a list of repositories' };
+
+  const repos = raw
+    .map(parsePortfolioRepo)
+    .filter((repo): repo is PortfolioRepo => repo !== null)
+    .sort((a, b) => a.name.localeCompare(b.name, 'en', { sensitivity: 'base' }));
+
+  return { ok: true, repos };
+}
+
+function sameRepoUrl(a: string, b: string): boolean {
+  const normalize = (url: string) => url.replace(/\/+$/, '').toLowerCase();
+  return normalize(a) === normalize(b);
+}
+
+/** Portfolio repositories that do not have a written case study yet. */
+export function withoutCaseStudy(
+  repos: readonly PortfolioRepo[],
+  caseStudySources: readonly string[],
+): readonly PortfolioRepo[] {
+  return repos.filter((repo) => !caseStudySources.some((source) => sameRepoUrl(source, repo.html_url)));
 }
 
 const MINUTE = 60_000;

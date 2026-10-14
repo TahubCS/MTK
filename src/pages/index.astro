@@ -8,6 +8,7 @@ import ProjectSheet from '../components/ProjectSheet.astro';
 import GithubActivity from '../components/GithubActivity.astro';
 import { site } from '../data/site';
 import { projects, bench } from '../data/projects';
+import { syncedBench } from '../data/portfolio';
 import { experience } from '../data/experience';
 
 const SHEETS = projects.length + 1;
@@ -73,7 +74,7 @@ const notes = [
       <h2 id="bench-title" class="label">On the bench</h2>
       <ul class="bench__list">
         {
-          bench.map((b) => (
+          [...bench, ...syncedBench].map((b) => (
             <li class="bench__item">
               <span class="bench__name">
                 {b.href ? (

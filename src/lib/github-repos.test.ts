@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { describeAge, parseRepoActivity } from './github-repos';
+import { describeAge, parsePortfolioRepos, parseRepoActivity, withoutCaseStudy } from './github-repos';
 
 function repo(overrides: Record<string, unknown> = {}): Record<string, unknown> {
   return {
@@ -69,6 +69,90 @@ describe('parseRepoActivity', () => {
   it('fails when nothing usable is left', () => {
     expect(parseRepoActivity([repo({ fork: true })], 5).ok).toBe(false);
     expect(parseRepoActivity([], 5).ok).toBe(false);
+  });
+});
+
+describe('parsePortfolioRepos', () => {
+  const tagged = (overrides: Record<string, unknown> = {}) =>
+    repo({ topics: ['portfolio', 'rag', 'nextjs'], homepage: 'https://example.com', archived: false, ...overrides });
+
+  it('keeps only repositories tagged portfolio, sorted by name', () => {
+    const result = parsePortfolioRepos([
+      tagged({ name: 'zeta' }),
+      repo({ name: 'untagged', topics: ['rag'] }),
+      tagged({ name: 'Alpha' }),
+    ]);
+
+    expect(result.ok && result.repos.map((r) => r.name)).toEqual(['Alpha', 'zeta']);
+  });
+
+  it('keeps topics in a stable sorted order', () => {
+    const result = parsePortfolioRepos([tagged()]);
+
+    expect(result.ok && result.repos[0]?.topics).toEqual(['nextjs', 'portfolio', 'rag']);
+  });
+
+  it('leaves out forks, archived and private repositories', () => {
+    const result = parsePortfolioRepos([
+      tagged({ name: 'fork', fork: true }),
+      tagged({ name: 'archived', archived: true }),
+      tagged({ name: 'private', private: true }),
+      tagged({ name: 'kept' }),
+    ]);
+
+    expect(result.ok && result.repos.map((r) => r.name)).toEqual(['kept']);
+  });
+
+  it('ignores a homepage that is empty or not an http link', () => {
+    const result = parsePortfolioRepos([
+      tagged({ name: 'a', homepage: '' }),
+      tagged({ name: 'b', homepage: 'javascript:alert(1)' }),
+      tagged({ name: 'c', homepage: 'https://c.example.com' }),
+    ]);
+
+    expect(result.ok && result.repos.map((r) => r.homepage)).toEqual([null, null, 'https://c.example.com']);
+  });
+
+  it('skips entries without topics or with a non-GitHub link', () => {
+    const result = parsePortfolioRepos([
+      tagged({ name: 'no-topics', topics: undefined }),
+      tagged({ name: 'bad-link', html_url: 'https://evil.example.com/x' }),
+      'nonsense',
+    ]);
+
+    expect(result).toEqual({ ok: true, repos: [] });
+  });
+
+  it('reads back what it produced, so the synced file uses the same parser', () => {
+    const first = parsePortfolioRepos([tagged({ name: 'round-trip' })]);
+    expect(first.ok).toBe(true);
+    if (!first.ok) return;
+
+    expect(parsePortfolioRepos(JSON.parse(JSON.stringify(first.repos)))).toEqual(first);
+  });
+
+  it('treats an empty list as valid and a non-list as an error', () => {
+    expect(parsePortfolioRepos([])).toEqual({ ok: true, repos: [] });
+    expect(parsePortfolioRepos({ message: 'Bad credentials' }).ok).toBe(false);
+  });
+});
+
+describe('withoutCaseStudy', () => {
+  const repos = [
+    { name: 'Reeflect', html_url: 'https://github.com/TahubCS/Reeflect' },
+    { name: 'NextBoard', html_url: 'https://github.com/TahubCS/NextBoard' },
+  ].map((r) => ({ ...r, description: null, language: null, homepage: null, topics: [] }));
+
+  it('leaves out repositories a case study already links to', () => {
+    const missing = withoutCaseStudy(repos, ['https://github.com/TahubCS/Reeflect']);
+
+    expect(missing.map((r) => r.name)).toEqual(['NextBoard']);
+  });
+
+  it('matches regardless of letter case or a trailing slash', () => {
+    const missing = withoutCaseStudy(repos, ['https://github.com/tahubcs/reeflect/', 'https://github.com/TahubCS/nextboard']);
+
+    expect(missing).toEqual([]);
   });
 });
 
