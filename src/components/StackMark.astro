@@ -1,0 +1,36 @@
+---
+/**
+ * The site's mark: the same three-layer stack as the hero, assembled.
+ * On the homepage the hero stack "docks" into this mark at the end of the
+ * work section (see scripts/exploded-stack.ts).
+ */
+interface Props {
+  class?: string;
+  lit?: 'ui' | 'api' | 'data';
+  dock?: boolean;
+}
+const { class: className, lit, dock = false } = Astro.props;
+const fill = (layer: string) => (lit === layer ? 'var(--accent)' : 'var(--paper-raised)');
+---
+
+<svg
+  class:list={['stack-mark', className]}
+  viewBox="0 0 40 30"
+  aria-hidden="true"
+  focusable="false"
+  data-header-mark={dock ? '' : undefined}
+>
+  <g stroke="var(--ink)" stroke-width="1.6" stroke-linejoin="round">
+    <polygon points="20,18 36,22.5 20,27 4,22.5" fill={fill('data')}></polygon>
+    <polygon points="20,11 36,15.5 20,20 4,15.5" fill={fill('api')}></polygon>
+    <polygon points="20,4 36,8.5 20,13 4,8.5" fill={fill('ui')}></polygon>
+  </g>
+</svg>
+
+<style>
+  .stack-mark {
+    width: 28px;
+    height: 21px;
+    flex: 0 0 auto;
+  }
+</style>

@@ -1,0 +1,456 @@
+---
+import Base from '../layouts/Base.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import TitleBlock from '../components/TitleBlock.astro';
+import ExplodedStack from '../components/ExplodedStack.astro';
+import ProjectSheet from '../components/ProjectSheet.astro';
+import { site } from '../data/site';
+import { projects, bench } from '../data/projects';
+import { experience } from '../data/experience';
+
+const SHEETS = projects.length + 1;
+const sheet = `01 / ${String(SHEETS).padStart(2, '0')}`;
+const nameParts = site.name.split(' ');
+
+const contact = [
+  site.links.email && { label: 'Email ↗', href: site.links.email },
+  { label: 'GitHub ↗', href: site.links.github },
+  site.links.linkedin && { label: 'LinkedIn ↗', href: site.links.linkedin },
+  site.links.resume && { label: 'Résumé (PDF) ↗', href: site.links.resume },
+].filter(Boolean) as { label: string; href: string }[];
+
+const notes = [
+  `I study computer science at ${site.institution}. My interests sit between software engineering and applied AI: how information gets retrieved, how an agent uses it, and how a person understands the result.`,
+  'I like following one feature across the interface, the API and the data layer, instead of treating those as separate problems.',
+  'I name limitations out loud. If a number isn’t measured, it isn’t on this site.',
+];
+---
+
+<Base>
+  <Header sheet={sheet} dockMark />
+
+  <main id="main">
+    <div class="wrap scene" data-stack-scene>
+      <section class="hero" aria-labelledby="hero-title">
+        <p class="label label--accent">Fig. 00 — Portfolio / Selected systems</p>
+        <h1 id="hero-title" class="hero__name display">
+          {nameParts.map((part, i) => (i < nameParts.length - 1 ? <>{part}<br /></> : part))}
+        </h1>
+        <p class="hero__statement lede">{site.statement}</p>
+
+        <div class="hero__block">
+          <TitleBlock
+            min={200}
+            items={[
+              { label: 'Drawn by', value: site.name },
+              { label: 'Discipline', value: site.discipline },
+              { label: 'Institution', value: site.institution },
+              { label: 'Status', value: site.status, marker: true },
+              { label: 'Evidence', value: 'Every claim links to source' },
+            ]}
+          />
+        </div>
+      </section>
+
+      <aside class="scene__stack" aria-label="Diagram">
+        <div class="scene__sticky">
+          <ExplodedStack />
+        </div>
+      </aside>
+
+      <section id="work" class="work" aria-labelledby="work-title" data-stack-work>
+        <div class="work__head">
+          <h2 id="work-title" class="h2">Selected systems</h2>
+          <span class="label label--muted">Fig. 01 — {String(projects.length).padStart(2, '0')} · Live apps + engineering notes</span>
+        </div>
+        {projects.map((p) => <ProjectSheet project={p} />)}
+      </section>
+    </div>
+
+    <section id="bench" class="wrap bench" aria-labelledby="bench-title">
+      <h2 id="bench-title" class="label">On the bench</h2>
+      <ul class="bench__list">
+        {
+          bench.map((b) => (
+            <li class="bench__item">
+              <span class="bench__name">{b.name}</span>
+              <span class="bench__summary">{b.summary}</span>
+              <span class="bench__stack mono">
+                {b.stack} · {b.status}
+              </span>
+            </li>
+          ))
+        }
+      </ul>
+    </section>
+
+    <section id="experience" class="wrap section" aria-labelledby="experience-title">
+      <div class="experience">
+        <h2 id="experience-title" class="h2">Experience</h2>
+        <ol class="experience__list">
+          {
+            experience.map((r) => (
+              <li class="role">
+                <div class="role__head">
+                  <h3 class="role__title">{r.title}</h3>
+                  <span class="label label--muted">{r.period}</span>
+                </div>
+                <p class="label label--accent">{r.org}</p>
+                <ul class="role__points">
+                  {r.points.map((pt) => <li>{pt}</li>)}
+                </ul>
+                {r.source && (
+                  <a class="role__source mono" href={r.source.href} rel="noopener">
+                    {r.source.label}
+                  </a>
+                )}
+              </li>
+            ))
+          }
+        </ol>
+      </div>
+    </section>
+
+    <section id="about" class="wrap section" aria-labelledby="about-title">
+      <div class="about">
+        <h2 id="about-title" class="h2">General<br />notes</h2>
+        <ol class="about__notes">
+          {
+            notes.map((n, i) => (
+              <li>
+                <span class="label label--accent">N{i + 1}</span>
+                <p>{n}</p>
+              </li>
+            ))
+          }
+        </ol>
+      </div>
+    </section>
+
+    <section id="contact" class="wrap section" aria-labelledby="contact-title">
+      <div class="contact">
+        <div class="contact__lead">
+          <p class="label contact__eyebrow">End of sheet</p>
+          <h2 id="contact-title" class="contact__title display">Let’s build something useful.</h2>
+        </div>
+        <ul class="contact__links">
+          {
+            contact.map((c) => (
+              <li>
+                <a href={c.href} rel={c.href.startsWith('http') ? 'noopener' : undefined}>
+                  {c.label}
+                </a>
+              </li>
+            ))
+          }
+        </ul>
+      </div>
+    </section>
+  </main>
+
+  <Footer sheet={sheet} />
+</Base>
+
+<script>
+  import { initExplodedStack } from '../scripts/exploded-stack';
+  initExplodedStack();
+</script>
+
+<style>
+  /* The header mark is "docked" by the stack at the end of the work section. */
+  @media (min-width: 900px) and (prefers-reduced-motion: no-preference) {
+    :global(.js [data-header-mark]) {
+      opacity: 0;
+    }
+  }
+
+  /* ---------- hero + work share one grid so the stack can stay pinned ---------- */
+  .scene {
+    display: grid;
+    grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+    grid-template-areas:
+      'hero stack'
+      'work stack';
+    column-gap: clamp(32px, 5vw, 80px);
+  }
+
+  .hero {
+    grid-area: hero;
+    padding-top: clamp(40px, 6vw, 88px);
+  }
+
+  .hero .label {
+    margin-bottom: 24px;
+  }
+
+  /* "MUHAMMAD" is the widest line: ~8em at this width, so size by viewport. */
+  .hero__name {
+    font-size: clamp(36px, 11vw, 100px);
+  }
+
+  @media (min-width: 900px) {
+    .hero__name {
+      font-size: clamp(52px, 6.6vw, 100px);
+    }
+  }
+
+  .hero__statement {
+    margin-top: 40px;
+    max-width: 30ch;
+  }
+
+  .hero__block {
+    margin-top: clamp(40px, 5vw, 64px);
+  }
+
+  .scene__stack {
+    grid-area: stack;
+  }
+
+  .scene__sticky {
+    position: sticky;
+    top: calc(var(--header-h) + 24px);
+    min-height: calc(100vh - var(--header-h) - 48px);
+    display: flex;
+    align-items: center;
+  }
+
+  .work {
+    grid-area: work;
+    padding-top: clamp(80px, 9vw, 140px);
+  }
+
+  .work__head {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 12px 24px;
+    padding-bottom: 16px;
+    border-bottom: var(--line) solid var(--ink);
+  }
+
+  @media (max-width: 899px) {
+    .scene {
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-areas:
+        'hero'
+        'stack'
+        'work';
+    }
+
+    .scene__sticky {
+      position: static;
+      min-height: 0;
+      padding-top: 48px;
+    }
+  }
+
+  /* ---------- bench ---------- */
+  .bench {
+    padding-top: 56px;
+  }
+
+  .bench__list {
+    margin-top: 20px;
+    border-top: var(--line) solid var(--ink);
+  }
+
+  .bench__item {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 8px 32px;
+    padding: 20px 0;
+    border-bottom: 1px solid var(--rule-soft);
+  }
+
+  .bench__name {
+    flex: 0 0 220px;
+    font-weight: 800;
+    font-stretch: 112%;
+    font-size: 24px;
+    text-transform: uppercase;
+    letter-spacing: -0.02em;
+  }
+
+  .bench__summary {
+    flex: 1 1 360px;
+    font-size: 16px;
+    line-height: 1.5;
+    color: var(--ink-soft);
+  }
+
+  .bench__stack {
+    font-size: 12px;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  /* ---------- experience ---------- */
+  .experience {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 32px 56px;
+    padding-top: 24px;
+    border-top: var(--line) solid var(--ink);
+  }
+
+  .experience .h2 {
+    flex: 1 1 280px;
+  }
+
+  .experience__list {
+    flex: 2 1 560px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .role {
+    padding: 28px 0;
+    border-bottom: 1px solid var(--rule-soft);
+  }
+
+  .role:first-child {
+    padding-top: 0;
+  }
+
+  .role__head {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 8px 24px;
+    margin-bottom: 8px;
+  }
+
+  .role__title {
+    font-weight: 800;
+    font-stretch: 112%;
+    font-size: 24px;
+    text-transform: uppercase;
+    letter-spacing: -0.02em;
+  }
+
+  .role__points {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 16px;
+    max-width: 62ch;
+    font-size: 16px;
+    line-height: 1.5;
+    color: var(--ink-soft);
+  }
+
+  .role__points li {
+    padding-left: 20px;
+    position: relative;
+  }
+
+  .role__points li::before {
+    content: '—';
+    position: absolute;
+    left: 0;
+    color: var(--muted);
+  }
+
+  .role__source {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    margin-top: 8px;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  /* ---------- about ---------- */
+  .about {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 32px 56px;
+    padding-top: 24px;
+    border-top: var(--line) solid var(--ink);
+  }
+
+  .about .h2 {
+    flex: 1 1 280px;
+  }
+
+  .about__notes {
+    flex: 2 1 560px;
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+  }
+
+  .about__notes li {
+    display: flex;
+    gap: 20px;
+  }
+
+  .about__notes .label {
+    flex: 0 0 36px;
+    padding-top: 5px;
+  }
+
+  .about__notes p {
+    font-size: 19px;
+    line-height: 1.55;
+    max-width: 58ch;
+  }
+
+  /* ---------- contact ---------- */
+  .contact {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 40px;
+    padding: clamp(32px, 5vw, 72px);
+    background: var(--ink);
+    color: var(--on-ink);
+  }
+
+  .contact__lead {
+    flex: 1 1 520px;
+    min-width: 0;
+  }
+
+  .contact__eyebrow {
+    margin-bottom: 20px;
+    color: var(--on-ink-muted);
+  }
+
+  .contact__title {
+    font-stretch: 122%;
+    font-size: clamp(40px, 6vw, 92px);
+    line-height: 0.9;
+    letter-spacing: -0.04em;
+  }
+
+  .contact__links {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-width: 220px;
+    font-family: var(--font-mono);
+    font-size: 14px;
+  }
+
+  .contact__links a {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+    border-bottom: 1px solid var(--muted);
+    text-decoration: none;
+    color: var(--on-ink);
+  }
+
+  .contact__links a:hover {
+    color: #9fb0ff;
+    border-color: #9fb0ff;
+  }
+</style>

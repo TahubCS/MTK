@@ -1,0 +1,291 @@
+/* ------------------------------------------------------------------
+   Spec Sheet — design tokens and base styles
+   One ink, one paper, one accent. Lines do the work that shadows and
+   gradients do on other sites.
+------------------------------------------------------------------- */
+
+:root {
+  --paper: #eeeeea;
+  --paper-raised: #f7f7f4;
+  --ink: #111214;
+  --ink-soft: #2e3035;
+  --muted: #55585e;
+  --rule-soft: #b9bab4;
+  --dash: #8a8d93;
+  --face-left: #d9d9d3;
+  --face-right: #c9c9c2;
+  --accent: #1d3fd8;
+  --on-accent: #ffffff;
+  --on-ink: #eeeeea;
+  --on-ink-muted: #a9acb2;
+
+  --font-display: 'Archivo Variable', 'Archivo', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono Variable', 'JetBrains Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+
+  --line: 1.5px;
+  --line-heavy: 2.5px;
+  --gutter: clamp(16px, 4vw, 48px);
+  --max: 1360px;
+  --header-h: 64px;
+
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+
+  color-scheme: light;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  scroll-padding-top: calc(var(--header-h) + 16px);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-size: 17px;
+  line-height: 1.55;
+  font-optical-sizing: auto;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+img,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
+a {
+  color: inherit;
+  text-underline-offset: 0.18em;
+  text-decoration-thickness: 1px;
+}
+
+a:hover {
+  color: var(--accent);
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+::selection {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+code {
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+}
+
+h1,
+h2,
+h3,
+p,
+figure,
+dl,
+dd,
+ol,
+ul {
+  margin: 0;
+}
+
+ol,
+ul {
+  padding: 0;
+  list-style: none;
+}
+
+/* ---------- layout ---------- */
+
+.wrap {
+  width: 100%;
+  max-width: var(--max);
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+}
+
+.section {
+  padding-top: clamp(80px, 9vw, 140px);
+}
+
+.visually-hidden {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.skip-link {
+  position: absolute;
+  left: var(--gutter);
+  top: -100px;
+  z-index: 100;
+  padding: 12px 16px;
+  background: var(--ink);
+  color: var(--on-ink);
+  font-family: var(--font-mono);
+  font-size: 13px;
+}
+
+.skip-link:focus {
+  top: 12px;
+}
+
+/* ---------- type ---------- */
+
+.label {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.label--accent {
+  color: var(--accent);
+}
+
+.label--muted {
+  color: var(--muted);
+}
+
+.mono {
+  font-family: var(--font-mono);
+}
+
+.display {
+  font-weight: 900;
+  font-stretch: 125%;
+  text-transform: uppercase;
+  letter-spacing: -0.045em;
+  line-height: 0.86;
+}
+
+.h2 {
+  font-weight: 800;
+  font-stretch: 112%;
+  font-size: clamp(32px, 4vw, 56px);
+  letter-spacing: -0.03em;
+  text-transform: uppercase;
+  line-height: 0.95;
+}
+
+.lede {
+  font-size: clamp(20px, 1.9vw, 26px);
+  line-height: 1.35;
+  font-weight: 450;
+  letter-spacing: -0.01em;
+}
+
+/* ---------- buttons ---------- */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  padding: 0 20px;
+  border: var(--line) solid var(--ink);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  text-decoration: none;
+  transition: background-color 160ms var(--ease-out), color 160ms var(--ease-out), border-color 160ms var(--ease-out);
+}
+
+.btn--solid {
+  background: var(--ink);
+  color: var(--on-ink);
+}
+
+.btn--solid:hover {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--on-accent);
+}
+
+.btn--line:hover {
+  border-color: var(--accent);
+}
+
+.btn-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+/* ---------- drawing frame (used by every figure) ---------- */
+
+.sheet {
+  border: var(--line) solid var(--ink);
+  background: var(--paper-raised);
+}
+
+.sheet__strip {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 16px;
+  border-bottom: var(--line) solid var(--ink);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.sheet__caption {
+  padding-top: 14px;
+  border-top: 1px dashed var(--dash);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+/* ---------- section heading with § number ---------- */
+
+.sect-head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px 32px;
+  border-top: var(--line) solid var(--ink);
+  padding-top: 24px;
+  margin-bottom: 32px;
+}
+
+.sect-head__title {
+  margin-top: 8px;
+  font-weight: 800;
+  font-stretch: 112%;
+  font-size: clamp(28px, 3vw, 40px);
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+  line-height: 1;
+}

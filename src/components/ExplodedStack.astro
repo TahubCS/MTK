@@ -1,0 +1,292 @@
+---
+/**
+ * FIG. 00 — the exploded stack (Motion 2).
+ *
+ * Without JavaScript, or with reduced motion, or on narrow screens, this is
+ * a static exploded drawing. On wide screens with motion allowed,
+ * scripts/exploded-stack.ts assembles it on load and scrubs it apart with
+ * scroll, lighting the layer that belongs to the project on screen.
+ */
+import { layerNames, projects, type Layer } from '../data/projects';
+
+const order: Layer[] = ['data', 'api', 'ui']; // back to front
+const cy: Record<Layer, number> = { ui: 110, api: 250, data: 390 };
+
+const L = 90; // left x
+const R = 430; // right x
+const C = 260; // center x
+const H = 64; // half-height of the top face
+const T = 14; // thickness
+
+const top = (y: number) => `${C},${y - H} ${R},${y} ${C},${y + H} ${L},${y}`;
+const left = (y: number) => `${L},${y} ${C},${y + H} ${C},${y + H + T} ${L},${y + T}`;
+const right = (y: number) => `${C},${y + H} ${R},${y} ${R},${y + T} ${C},${y + H + T}`;
+
+const projectsByLayer = Object.fromEntries(
+  projects.map((p) => [p.layer, p.name]),
+) as Partial<Record<Layer, string>>;
+
+const dots: [number, number][] = [];
+for (let r = 0; r < 3; r++) for (let c = 0; c < 3; c++) dots.push([200 + c * 30 + r * 30, 390 + c * -12 + r * 12]);
+---
+
+<figure class="stack" data-stack data-projects={JSON.stringify(projectsByLayer)}>
+  <svg viewBox="0 0 700 540" role="img" aria-labelledby="stack-title">
+    <title id="stack-title">
+      Exploded view of a software stack: an interface layer, an API layer and a data layer, separated vertically.
+    </title>
+
+    <g class="stack__guides" data-stack-guides aria-hidden="true">
+      <line x1={L} y1={cy.ui + T} x2={L} y2={cy.api}></line>
+      <line x1={R} y1={cy.ui + T} x2={R} y2={cy.api}></line>
+      <line x1={L} y1={cy.api + T} x2={L} y2={cy.data}></line>
+      <line x1={R} y1={cy.api + T} x2={R} y2={cy.data}></line>
+      <line x1={C} y1={cy.ui + H + T} x2={C} y2={cy.api + H}></line>
+      <line x1={C} y1={cy.api + H + T} x2={C} y2={cy.data + H}></line>
+    </g>
+
+    {
+      order.map((layer) => (
+        <g class="stack__layer" data-layer={layer}>
+          <polygon class="face face--left" points={left(cy[layer])} />
+          <polygon class="face face--right" points={right(cy[layer])} />
+          <polygon class="face face--top" points={top(cy[layer])} />
+          {layer === 'data' && (
+            <g class="deco deco--fill">
+              {dots.map(([x, y]) => (
+                <circle cx={x} cy={y} r="3" />
+              ))}
+            </g>
+          )}
+          {layer === 'api' && (
+            <g class="deco deco--stroke">
+              <path d="M190 250 L330 250" />
+              <path d="M312 238 L330 250 L312 262" />
+            </g>
+          )}
+          {layer === 'ui' && (
+            <g class="deco deco--stroke">
+              <polygon points="210,100 300,66 340,81 250,115" />
+              <line x1="190" y1="122" x2="260" y2="96" />
+              <line x1="206" y1="130" x2="290" y2="98" />
+            </g>
+          )}
+        </g>
+      ))
+    }
+
+    {
+      (['ui', 'api', 'data'] as Layer[]).map((layer) => (
+        <g class="stack__callout" data-callout={layer}>
+          <polyline points={`${R},${cy[layer]} ${R + 40},${cy[layer]} ${R + 48},${cy[layer] - 8}`} />
+          <text class="callout__name" x={R + 56} y={cy[layer] - 8}>
+            {layerNames[layer].code} / {layerNames[layer].name.toUpperCase()}
+          </text>
+          <text
+            class="callout__sub"
+            x={R + 56}
+            y={cy[layer] + 16}
+            data-callout-sub
+            data-default={layerNames[layer].note}
+          >
+            {layerNames[layer].note}
+          </text>
+        </g>
+      ))
+    }
+  </svg>
+  <ol class="stack__legend" aria-hidden="true">
+    {
+      (['ui', 'api', 'data'] as Layer[]).map((layer) => (
+        <li>
+          <span class="stack__legend-name">
+            {layerNames[layer].code} / {layerNames[layer].name}
+          </span>
+          <span>{layerNames[layer].note}</span>
+        </li>
+      ))
+    }
+  </ol>
+  <figcaption class="stack__caption">
+    FIG. 00 — The stack, exploded. Most of my work lives in the gaps between these layers.
+  </figcaption>
+</figure>
+
+<style>
+  .stack {
+    width: 100%;
+  }
+
+  .stack svg {
+    width: 100%;
+    height: auto;
+    overflow: visible;
+  }
+
+  .stack__guides line {
+    stroke: var(--ink);
+    stroke-width: 1.2;
+    stroke-dasharray: 4 5;
+    fill: none;
+  }
+
+  .face {
+    stroke: var(--ink);
+    stroke-width: 1.5;
+    stroke-linejoin: round;
+  }
+
+  .face--left {
+    fill: var(--face-left);
+  }
+
+  .face--right {
+    fill: var(--face-right);
+  }
+
+  .face--top {
+    fill: var(--paper-raised);
+    transition: fill 280ms var(--ease-out);
+  }
+
+  .deco--fill {
+    fill: var(--ink);
+    transition: fill 280ms var(--ease-out);
+  }
+
+  .deco--stroke {
+    fill: none;
+    stroke: var(--ink);
+    stroke-width: 1.5;
+    stroke-linecap: round;
+    transition: stroke 280ms var(--ease-out);
+  }
+
+  .stack__layer {
+    transition: opacity 280ms var(--ease-out);
+  }
+
+  .stack__callout polyline {
+    fill: none;
+    stroke: var(--ink);
+    stroke-width: 1.2;
+  }
+
+  .callout__name {
+    font-family: var(--font-mono);
+    font-size: 17px;
+    font-weight: 600;
+    fill: var(--ink);
+    transition: fill 280ms var(--ease-out);
+  }
+
+  .callout__sub {
+    font-family: var(--font-mono);
+    font-size: 14px;
+    fill: var(--muted);
+  }
+
+  /* On small screens the SVG callouts get too small to read, so they are
+     replaced by an HTML legend under the drawing. */
+  .stack__legend {
+    display: none;
+  }
+
+  @media (max-width: 599px) {
+    .stack__callout {
+      display: none;
+    }
+
+    .stack__legend {
+      display: grid;
+      gap: 8px;
+      margin-top: 16px;
+      padding-top: 12px;
+      border-top: 1px dashed var(--dash);
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .stack__legend li {
+      display: flex;
+      gap: 12px;
+    }
+
+    .stack__legend-name {
+      flex: 0 0 120px;
+      color: var(--ink);
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+  }
+
+  .stack__caption {
+    margin-top: 8px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--muted);
+  }
+
+  /* Active layer (set by the script as data-active on .stack) */
+  .stack[data-active='ui'] [data-layer='ui'] .face--top,
+  .stack[data-active='api'] [data-layer='api'] .face--top,
+  .stack[data-active='data'] [data-layer='data'] .face--top {
+    fill: var(--accent);
+  }
+
+  .stack[data-active='ui'] [data-layer='ui'] .deco--fill,
+  .stack[data-active='api'] [data-layer='api'] .deco--fill,
+  .stack[data-active='data'] [data-layer='data'] .deco--fill {
+    fill: var(--paper-raised);
+  }
+
+  .stack[data-active='ui'] [data-layer='ui'] .deco--stroke,
+  .stack[data-active='api'] [data-layer='api'] .deco--stroke,
+  .stack[data-active='data'] [data-layer='data'] .deco--stroke {
+    stroke: var(--paper-raised);
+  }
+
+  .stack[data-active='ui'] [data-callout='ui'] .callout__name,
+  .stack[data-active='api'] [data-callout='api'] .callout__name,
+  .stack[data-active='data'] [data-callout='data'] .callout__name {
+    fill: var(--accent);
+  }
+
+  .stack[data-active]:not([data-active='']) .stack__layer {
+    opacity: 0.5;
+  }
+
+  .stack[data-active='ui']:not([data-active='']) .stack__layer[data-layer='ui'],
+  .stack[data-active='api']:not([data-active='']) .stack__layer[data-layer='api'],
+  .stack[data-active='data']:not([data-active='']) .stack__layer[data-layer='data'] {
+    opacity: 1;
+  }
+
+  /* Assembled before the script runs, so there is no flash of the exploded state. */
+  @media (min-width: 900px) and (prefers-reduced-motion: no-preference) {
+    :global(.js) .stack [data-layer='ui'] {
+      transform: translateY(126px);
+    }
+
+    :global(.js) .stack [data-layer='data'] {
+      transform: translateY(-126px);
+    }
+
+    :global(.js) .stack__guides,
+    :global(.js) .stack__callout {
+      opacity: 0;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .face--top,
+    .deco--fill,
+    .deco--stroke,
+    .stack__layer,
+    .callout__name {
+      transition: none;
+    }
+  }
+</style>

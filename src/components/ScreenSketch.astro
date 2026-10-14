@@ -1,0 +1,252 @@
+---
+/**
+ * A drawn stand-in for a screenshot, in the site's own line style.
+ * Add `image` to a milestone in data/projects.ts to show a real
+ * screenshot instead.
+ */
+import type { Milestone } from '../data/projects';
+
+interface Props {
+  milestone: Milestone;
+}
+const { milestone: m } = Astro.props;
+const s = m.screen;
+---
+
+<div class="screen">
+  <div class="screen__bar">
+    <span class="screen__dots" aria-hidden="true"><i></i><i></i><i></i></span>
+    <span class="screen__heading">{s.heading}</span>
+  </div>
+
+  {
+    m.image ? (
+      <img class="screen__img" src={m.image} alt={m.imageAlt ?? ''} loading="lazy" decoding="async" />
+    ) : (
+      <div class="screen__body" role="img" aria-label={`Illustration: ${m.title}`}>
+        {s.kind === 'list' && (
+          <ul class="screen__list">
+            {s.rows.map((r) => (
+              <li class:list={{ lit: r.lit }}>
+                <span class="screen__row-label">{r.label}</span>
+                {r.note && <span class="screen__row-note">{r.note}</span>}
+                {r.tag && <span class="screen__tag">{r.tag}</span>}
+              </li>
+            ))}
+          </ul>
+        )}
+
+        {s.kind === 'chat' && (
+          <div class="screen__chat">
+            {s.messages.map((msg) => (
+              <p class:list={['bubble', `bubble--${msg.from}`]}>{msg.text}</p>
+            ))}
+          </div>
+        )}
+
+        {s.kind === 'flow' && (
+          <div class="screen__flow">
+            {s.nodes.map((node, i) => (
+              <>
+                <span class:list={['node', { lit: node.lit }]}>{node.label}</span>
+                {i < s.nodes.length - 1 && (
+                  <span class="screen__arrow" aria-hidden="true">
+                    →
+                  </span>
+                )}
+              </>
+            ))}
+          </div>
+        )}
+
+        {s.kind === 'cards' && (
+          <div class="screen__cards">
+            {s.cards.map((c) => (
+              <span class:list={['card', { lit: c.lit }]}>{c.label}</span>
+            ))}
+          </div>
+        )}
+      </div>
+    )
+  }
+</div>
+
+<style>
+  .screen {
+    border: var(--line) solid var(--ink);
+    background: #fff;
+    box-shadow: 10px 10px 0 var(--ink);
+    font-family: var(--font-mono);
+  }
+
+  .screen__bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    border-bottom: var(--line) solid var(--ink);
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  .screen__dots {
+    display: flex;
+    gap: 6px;
+  }
+
+  .screen__dots i {
+    width: 9px;
+    height: 9px;
+    border: 1px solid var(--ink);
+    border-radius: 50%;
+  }
+
+  .screen__heading {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  .screen__img {
+    width: 100%;
+    height: auto;
+  }
+
+  .screen__body {
+    min-height: 260px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  /* list */
+  .screen__list li {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 4px 14px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--face-right);
+    font-size: 13px;
+  }
+
+  .screen__list li:last-child {
+    border-bottom: 0;
+  }
+
+  .screen__row-label {
+    font-weight: 600;
+    word-break: break-all;
+  }
+
+  .screen__row-note {
+    color: var(--muted);
+    font-size: 12px;
+  }
+
+  .screen__tag {
+    margin-left: auto;
+    padding: 2px 8px;
+    border: 1px solid var(--muted);
+    color: var(--muted);
+    font-size: 10px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .screen__list li.lit .screen__tag {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .screen__list li.lit .screen__row-label {
+    color: var(--accent);
+  }
+
+  /* chat */
+  .screen__chat {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    font-size: 13px;
+    line-height: 1.45;
+  }
+
+  .bubble {
+    max-width: 82%;
+    padding: 9px 12px;
+  }
+
+  .bubble--user {
+    align-self: flex-end;
+    background: var(--ink);
+    color: var(--on-ink);
+  }
+
+  .bubble--ai {
+    align-self: flex-start;
+    border: 1px solid var(--ink);
+  }
+
+  .bubble--agent {
+    align-self: flex-start;
+    border: var(--line-heavy) solid var(--ink);
+  }
+
+  .bubble--system {
+    align-self: stretch;
+    max-width: none;
+    padding: 6px;
+    border-top: 1px dashed var(--ink);
+    border-bottom: 1px dashed var(--ink);
+    color: var(--accent);
+    font-weight: 600;
+    font-size: 12px;
+    text-align: center;
+  }
+
+  /* flow */
+  .screen__flow {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    font-size: 13px;
+  }
+
+  .node {
+    padding: 12px 14px;
+    border: var(--line) solid var(--ink);
+  }
+
+  .node.lit,
+  .card.lit {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--on-accent);
+  }
+
+  .screen__arrow {
+    color: var(--muted);
+  }
+
+  /* cards */
+  .screen__cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 10px;
+  }
+
+  .card {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 72px;
+    padding: 12px;
+    border: var(--line) solid var(--ink);
+    font-size: 13px;
+    text-align: center;
+  }
+</style>

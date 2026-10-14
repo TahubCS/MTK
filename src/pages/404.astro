@@ -1,0 +1,38 @@
+---
+import Base from '../layouts/Base.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import { site } from '../data/site';
+---
+
+<Base title={`Not found — ${site.name}`}>
+  <Header sheet="404" />
+  <main id="main" class="wrap missing">
+    <p class="label label--accent">Error · Sheet not found</p>
+    <h1 class="display missing__title">No such<br />drawing.</h1>
+    <p class="lede missing__text">This page isn’t in the set. It may have moved when the site was redrawn.</p>
+    <div class="btn-row">
+      <a class="btn btn--solid" href="/">Back to the index →</a>
+      <a class="btn btn--line" href="/#work">Selected systems</a>
+    </div>
+  </main>
+  <Footer sheet="404" path="/404" />
+</Base>
+
+<style>
+  .missing {
+    padding-top: clamp(64px, 10vw, 160px);
+    padding-bottom: clamp(64px, 10vw, 160px);
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+  }
+
+  .missing__title {
+    font-size: clamp(56px, 10vw, 160px);
+  }
+
+  .missing__text {
+    max-width: 36ch;
+  }
+</style>

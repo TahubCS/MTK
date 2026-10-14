@@ -1,0 +1,101 @@
+---
+/** The engineering-drawing title block: a grid of labeled cells. */
+export interface TitleBlockItem {
+  label: string;
+  value?: string;
+  href?: string;
+  marker?: boolean;
+  links?: { label: string; href: string }[];
+}
+
+interface Props {
+  items: TitleBlockItem[];
+  min?: number;
+}
+const { items, min = 220 } = Astro.props;
+const external = (href: string) => (href.startsWith('http') ? 'noopener' : undefined);
+---
+
+<dl class="title-block" style={`--min:${min}px`}>
+  {
+    items.map((item) => (
+      <div class="title-block__cell">
+        <dt>{item.label}</dt>
+        <dd>
+          {item.marker && <span class="title-block__marker" aria-hidden="true" />}
+          {item.links ? (
+            <span class="title-block__links">
+              {item.links.map((l) => (
+                <a href={l.href} rel={external(l.href)}>
+                  {l.label}
+                </a>
+              ))}
+            </span>
+          ) : item.href ? (
+            <a href={item.href} rel={external(item.href)}>
+              {item.value}
+            </a>
+          ) : (
+            item.value
+          )}
+        </dd>
+      </div>
+    ))
+  }
+</dl>
+
+<style>
+  /* Flex rather than grid so a short last row stretches to the edge,
+     the way a drawing's title block always closes its frame. */
+  .title-block {
+    display: flex;
+    flex-wrap: wrap;
+    border-top: var(--line) solid var(--ink);
+    border-left: var(--line) solid var(--ink);
+  }
+
+  .title-block__cell {
+    flex: 1 1 var(--min);
+    min-width: 0;
+    padding: 16px 20px;
+    border-right: var(--line) solid var(--ink);
+    border-bottom: var(--line) solid var(--ink);
+  }
+
+  dt {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  dd {
+    margin-top: 6px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 17px;
+    font-weight: 600;
+    line-height: 1.35;
+  }
+
+  .title-block__links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 18px;
+  }
+
+  .title-block__links a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 32px;
+  }
+
+  .title-block__marker {
+    flex: 0 0 10px;
+    width: 10px;
+    height: 10px;
+    background: var(--accent);
+  }
+</style>

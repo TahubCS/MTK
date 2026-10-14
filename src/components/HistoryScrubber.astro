@@ -1,0 +1,261 @@
+---
+/**
+ * Motion 3 — Scrub the history.
+ *
+ * Markup is a plain vertical timeline (works without JS, with reduced
+ * motion, and on phones). On wide screens with motion allowed,
+ * scripts/history-scrubber.ts pins the section and lets scroll step
+ * through the milestones one at a time.
+ */
+import type { Milestone } from '../data/projects';
+import ScreenSketch from './ScreenSketch.astro';
+
+interface Props {
+  milestones: Milestone[];
+  id?: string;
+}
+const { milestones, id = 'history' } = Astro.props;
+---
+
+<div class="history" data-scrubber id={id} style={`--n:${milestones.length}`}>
+  <div class="history__stage">
+    <p class="history__bar" aria-hidden="true">
+      <span>Build history</span>
+      <span><span data-counter>01</span> / {String(milestones.length).padStart(2, '0')}</span>
+    </p>
+    <ol class="history__list">
+      {
+        milestones.map((m, i) => (
+          <li class:list={['milestone', { 'is-active': i === 0 }]} data-milestone>
+            <div class="milestone__commit">
+              <p class="milestone__meta">
+                <span>{m.label}</span>
+                {m.sha && <span>{m.sha.slice(0, 7)}</span>}
+                {m.date && <span>{m.date}</span>}
+                {m.mine && <span class="milestone__mine">Mine</span>}
+              </p>
+              <h3 class="milestone__title">{m.title}</h3>
+              <p class="milestone__summary">{m.summary}</p>
+              <pre class="diff" aria-label="Change summary"><code>{m.diff.map((d) => (
+                <span class:list={['diff__line', d.op === '+' ? 'diff__line--add' : 'diff__line--del']} data-diff-line>{d.op} {d.text}</span>
+              ))}</code></pre>
+              {m.href && (
+                <a class="milestone__link" href={m.href} rel="noopener">
+                  View commit ↗
+                </a>
+              )}
+            </div>
+            <div class="milestone__screen">
+              <ScreenSketch milestone={m} />
+            </div>
+          </li>
+        ))
+      }
+    </ol>
+
+    <div class="history__track" aria-label="Milestones">
+      {
+        milestones.map((m, i) => (
+          <button class="track__seg" type="button" data-track-seg={i} aria-label={`Go to ${m.label}: ${m.title}`}>
+            <span class="track__bar" aria-hidden="true">
+              <span class="track__fill" data-track-fill />
+            </span>
+            <span class="track__label">{m.label}</span>
+          </button>
+        ))
+      }
+    </div>
+  </div>
+</div>
+
+<style>
+  /* ---------- default: a vertical timeline ---------- */
+  .history__list {
+    border-top: var(--line-heavy) solid var(--ink);
+  }
+
+  .milestone {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 32px 56px;
+    padding: 40px 0;
+    border-bottom: 1px solid var(--rule-soft);
+  }
+
+  .milestone__commit {
+    flex: 1 1 340px;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .milestone__screen {
+    flex: 1.2 1 380px;
+    min-width: 0;
+    padding: 0 10px 10px 0;
+  }
+
+  .milestone__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 14px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .milestone__mine {
+    padding: 0 8px;
+    background: var(--accent);
+    color: var(--on-accent);
+  }
+
+  .milestone__title {
+    font-weight: 800;
+    font-stretch: 112%;
+    font-size: clamp(26px, 2.6vw, 36px);
+    line-height: 1.02;
+    letter-spacing: -0.025em;
+    text-transform: uppercase;
+  }
+
+  .milestone__summary {
+    font-size: 17px;
+    line-height: 1.55;
+    color: var(--ink-soft);
+    max-width: 52ch;
+  }
+
+  .diff {
+    margin: 0;
+    padding: 14px 16px;
+    border: var(--line) solid var(--ink);
+    background: var(--paper-raised);
+    font-family: var(--font-mono);
+    font-size: 13px;
+    line-height: 1.7;
+    white-space: pre-wrap;
+    overflow-x: auto;
+  }
+
+  .diff__line {
+    display: block;
+  }
+
+  .diff__line--add {
+    color: #1b6b3a;
+  }
+
+  .diff__line--del {
+    color: #a3341c;
+  }
+
+  .milestone__link {
+    align-self: flex-start;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .history__track,
+  .history__bar {
+    display: none;
+  }
+
+  /* ---------- scrub mode (added by the script) ---------- */
+  .history:global(.is-scrub) {
+    height: calc(var(--n) * 70vh + 100vh);
+  }
+
+  .history:global(.is-scrub) .history__stage {
+    position: sticky;
+    top: var(--header-h);
+    height: calc(100vh - var(--header-h));
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    padding: 24px 0;
+  }
+
+  .history:global(.is-scrub) .history__bar {
+    display: flex;
+    justify-content: space-between;
+    padding-bottom: 12px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .history:global(.is-scrub) .history__list {
+    position: relative;
+    border-top: var(--line-heavy) solid var(--ink);
+  }
+
+  .history:global(.is-scrub) .milestone {
+    position: absolute;
+    inset: 0;
+    align-items: center;
+    flex-wrap: nowrap;
+    padding: 24px 0;
+    border-bottom: 0;
+    opacity: 0;
+    visibility: hidden;
+  }
+
+  .history:global(.is-scrub) .milestone.is-active {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  .history:global(.is-scrub) .history__track {
+    display: grid;
+    grid-template-columns: repeat(var(--n), minmax(0, 1fr));
+    gap: 8px;
+    padding-top: 16px;
+    border-top: var(--line) solid var(--ink);
+  }
+
+  .track__seg {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-height: 44px;
+    padding: 6px 0;
+    border: 0;
+    background: none;
+    color: var(--muted);
+    font: inherit;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .track__seg:hover,
+  .track__seg[aria-current='step'] {
+    color: var(--ink);
+  }
+
+  .track__bar {
+    position: relative;
+    height: 4px;
+    background: var(--face-right);
+    overflow: hidden;
+  }
+
+  .track__fill {
+    position: absolute;
+    inset: 0;
+    background: var(--accent);
+    transform: scaleX(0);
+    transform-origin: left center;
+  }
+</style>

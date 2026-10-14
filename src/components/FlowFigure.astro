@@ -1,0 +1,185 @@
+---
+import type { Drawing } from '../data/projects';
+
+interface Props {
+  drawing: Drawing;
+  /** Larger cells and padding for the case-study page. */
+  large?: boolean;
+}
+const { drawing, large = false } = Astro.props;
+const n = drawing.steps.length;
+// Rows that divide evenly: 6 → 3+3, 4 → 4 (or 2+2 when narrow).
+const cols = n % 3 === 0 ? 3 : n === 4 ? 4 : Math.min(n, 3);
+const colsLarge = Math.min(n, 6);
+---
+
+<figure class:list={['sheet', 'flow', { 'flow--large': large }]} style={`--cols:${cols};--cols-lg:${colsLarge}`}>
+  <div class="sheet__strip">
+    <span>{drawing.title}</span>
+    <span>Dwg {drawing.id}</span>
+  </div>
+  <div class="flow__body">
+    <ol class="flow__steps">
+      {
+        drawing.steps.map((step, i) => (
+          <li class:list={['flow__step', { 'flow__step--lit': step.emphasis }]}>
+            <span class="flow__tag">{step.tag}</span>
+            <span class="flow__title">{step.title}</span>
+            {step.note && <span class="flow__note">{step.note}</span>}
+            {i < drawing.steps.length - 1 && (
+              <span class="flow__arrow" aria-hidden="true">
+                →
+              </span>
+            )}
+          </li>
+        ))
+      }
+    </ol>
+
+    {
+      drawing.prepared && (
+        <div class="flow__prepared">
+          <span class="flow__prepared-label">{drawing.prepared.label}</span>
+          {drawing.prepared.steps.map((s, i) => (
+            <>
+              <span class="flow__chip">{s}</span>
+              {i < drawing.prepared!.steps.length - 1 && <span aria-hidden="true">→</span>}
+            </>
+          ))}
+        </div>
+      )
+    }
+
+    <figcaption class="sheet__caption">{drawing.caption}</figcaption>
+  </div>
+</figure>
+
+<style>
+  .flow__body {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    padding: 24px;
+  }
+
+  .flow--large .flow__body {
+    padding: clamp(20px, 4vw, 48px);
+    gap: 28px;
+  }
+
+  .flow__steps {
+    display: grid;
+    grid-template-columns: repeat(var(--cols), minmax(0, 1fr));
+  }
+
+  .flow--large .flow__steps {
+    grid-template-columns: repeat(var(--cols-lg), minmax(0, 1fr));
+  }
+
+  @media (max-width: 1100px) {
+    .flow--large .flow__steps {
+      grid-template-columns: repeat(var(--cols), minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 640px) {
+    .flow__steps,
+    .flow--large .flow__steps {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 380px) {
+    .flow__steps,
+    .flow--large .flow__steps {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
+  .flow__step {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 16px;
+    margin: 0 calc(-1 * var(--line)) calc(-1 * var(--line)) 0;
+    border: var(--line) solid var(--ink);
+    background: #fff;
+    font-family: var(--font-mono);
+  }
+
+  .flow--large .flow__step {
+    padding: 20px;
+  }
+
+  .flow__step--lit {
+    background: var(--accent);
+    color: var(--on-accent);
+    border-width: var(--line-heavy);
+    z-index: 1;
+  }
+
+  .flow__tag {
+    font-size: 11px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .flow__step--lit .flow__tag,
+  .flow__step--lit .flow__note {
+    color: inherit;
+    opacity: 0.88;
+  }
+
+  .flow__title {
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  .flow--large .flow__title {
+    font-size: 15px;
+  }
+
+  .flow__note {
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--muted);
+  }
+
+  .flow__arrow {
+    position: absolute;
+    right: 8px;
+    top: 12px;
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  .flow__step--lit .flow__arrow {
+    color: inherit;
+  }
+
+  .flow__prepared {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 10px;
+    padding: 16px;
+    border: var(--line) dashed var(--ink);
+    font-family: var(--font-mono);
+    font-size: 13px;
+  }
+
+  .flow__prepared-label {
+    margin-right: 6px;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .flow__chip {
+    padding: 8px 10px;
+    border: 1px dashed var(--ink);
+  }
+</style>

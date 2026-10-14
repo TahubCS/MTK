@@ -1,0 +1,382 @@
+---
+import type { GetStaticPaths } from 'astro';
+import Base from '../../layouts/Base.astro';
+import Header from '../../components/Header.astro';
+import Footer from '../../components/Footer.astro';
+import TitleBlock, { type TitleBlockItem } from '../../components/TitleBlock.astro';
+import FlowFigure from '../../components/FlowFigure.astro';
+import HistoryScrubber from '../../components/HistoryScrubber.astro';
+import { projects, nextProject, type Project } from '../../data/projects';
+import { site } from '../../data/site';
+
+export const getStaticPaths = (() =>
+  projects.map((project) => ({ params: { slug: project.slug }, props: { project } }))) satisfies GetStaticPaths;
+
+interface Props {
+  project: Project;
+}
+
+const { project: p } = Astro.props;
+const next = nextProject(p.slug);
+const total = String(projects.length + 1).padStart(2, '0');
+const sheet = `${String(projects.indexOf(p) + 2).padStart(2, '0')} / ${total}`;
+const lines = p.nameLines ?? [p.name];
+
+const links = [
+  p.live && { label: 'Live app ↗', href: p.live },
+  p.source && { label: 'Source ↗', href: p.source },
+].filter(Boolean) as { label: string; href: string }[];
+
+const meta: TitleBlockItem[] = [
+  { label: 'My role', value: p.role },
+  ...(p.team ? [{ label: 'Team', value: p.team }] : []),
+  ...(p.timeline ? [{ label: 'Timeline', value: p.timeline }] : []),
+  { label: 'Stack', value: p.stack.join(', ') },
+  ...(p.status ? [{ label: 'Status', value: p.status, marker: true }] : []),
+  ...(links.length ? [{ label: 'Links', links }] : []),
+];
+
+let n = 0;
+const sect = () => `§ ${String(++n).padStart(2, '0')}`;
+---
+
+<Base title={`${p.name} — ${site.name}`} description={`${p.tagline} ${p.summary}`}>
+  <Header
+    sheet={sheet}
+    crumb={[{ label: '← index', href: '/' }, { label: 'projects', href: '/#work' }, { label: p.slug }]}
+  />
+
+  <main id="main">
+    <header class="wrap cs-head">
+      <p class="label label--accent">Fig. {p.fig} · {p.category}</p>
+      <h1 class="cs-title display">
+        {lines.map((line, i) => (i < lines.length - 1 ? <>{line}<br /></> : line))}
+      </h1>
+      <p class="cs-lede lede">{p.tagline}</p>
+      <div class="cs-meta">
+        <TitleBlock items={meta} min={200} />
+      </div>
+    </header>
+
+    <section class="wrap section" aria-labelledby="problem">
+      <div class="split">
+        <div class="split__head">
+          <p class="label label--accent">{sect()}</p>
+          <h2 id="problem" class="sect-head__title">The problem</h2>
+        </div>
+        <div class="split__body prose">
+          {p.problem.map((para) => <p>{para}</p>)}
+        </div>
+      </div>
+    </section>
+
+    <section class="wrap section" aria-labelledby="drawing">
+      <div class="sect-head">
+        <div>
+          <p class="label label--accent">{sect()}</p>
+          <h2 id="drawing" class="sect-head__title">System drawing</h2>
+        </div>
+        {p.drawing.prepared && <p class="label label--muted">Solid = per request · Dashed = prepared separately</p>}
+      </div>
+      <FlowFigure drawing={p.drawing} large />
+    </section>
+
+    <section class="wrap section" aria-labelledby="history-title">
+      <div class="sect-head">
+        <div>
+          <p class="label label--accent">{sect()}</p>
+          <h2 id="history-title" class="sect-head__title">How it came together</h2>
+        </div>
+        <p class="label label--muted">Scroll to step through · <span class="mine-key">Mine</span> = my work</p>
+      </div>
+      <HistoryScrubber milestones={p.history} id={`${p.slug}-history`} />
+    </section>
+
+    <section class="wrap section" aria-labelledby="decisions">
+      <div class="sect-head">
+        <div>
+          <p class="label label--accent">{sect()}</p>
+          <h2 id="decisions" class="sect-head__title">Decision log</h2>
+        </div>
+      </div>
+      <ol class="decisions">
+        {
+          p.decisions.map((d, i) => (
+            <li class="decision">
+              <span class="decision__id mono">D-{String(i + 1).padStart(2, '0')}</span>
+              <h3 class="decision__title">{d.title}</h3>
+              <p class="decision__body">
+                {d.body}
+                {d.evidence && (
+                  <>
+                    {' '}
+                    <a href={d.evidence.href} rel="noopener" class="decision__evidence">
+                      {d.evidence.label} ↗
+                    </a>
+                  </>
+                )}
+              </p>
+            </li>
+          ))
+        }
+      </ol>
+    </section>
+
+    <section class="wrap section" aria-labelledby="built">
+      <div class="split">
+        <div class="split__head">
+          <p class="label label--accent">{sect()}</p>
+          <h2 id="built" class="sect-head__title">What I built</h2>
+        </div>
+        <div class="split__body">
+          <ul class="built">
+            {
+              p.built.map((b) => (
+                <li class="built__item">
+                  <span class="built__title">{b.title}</span>
+                  {b.path &&
+                    (b.href ? (
+                      <a class="built__path mono" href={b.href} rel="noopener">
+                        {b.path} ↗
+                      </a>
+                    ) : (
+                      <span class="built__path mono">{b.path}</span>
+                    ))}
+                  {b.detail && <span class="built__path mono">{b.detail}</span>}
+                </li>
+              ))
+            }
+          </ul>
+          {p.credits && <p class="credits">{p.credits}</p>}
+        </div>
+      </div>
+    </section>
+
+    <section class="wrap section" aria-label="Known limits">
+      <aside class="limits">
+        <p class="label">{sect()} · Known limits</p>
+        <p class="limits__text">{p.limits}</p>
+      </aside>
+    </section>
+
+    <section class="wrap section">
+      <a class="next" href={`/projects/${next.slug}`}>
+        <span class="next__lead">
+          <span class="label next__eyebrow">Next sheet · Fig. {next.fig}</span>
+          <span class="next__name display">{next.name}</span>
+        </span>
+        <span class="next__cta mono">Read the case study →</span>
+      </a>
+    </section>
+  </main>
+
+  <Footer sheet={sheet} path={`/projects/${p.slug}`} />
+</Base>
+
+<script>
+  import { initHistoryScrubbers } from '../../scripts/history-scrubber';
+  initHistoryScrubbers();
+</script>
+
+<style>
+  .cs-head {
+    padding-top: clamp(40px, 6vw, 88px);
+  }
+
+  .cs-head > .label {
+    margin-bottom: 24px;
+  }
+
+  .cs-title {
+    font-size: clamp(36px, min(11vw, 148px), 148px);
+    line-height: 0.84;
+    letter-spacing: -0.05em;
+  }
+
+  .cs-lede {
+    margin-top: 36px;
+    max-width: 34ch;
+    font-size: clamp(21px, 2vw, 28px);
+    line-height: 1.3;
+    font-weight: 500;
+  }
+
+  .cs-meta {
+    margin-top: 48px;
+  }
+
+  .split {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 24px 56px;
+    border-top: var(--line) solid var(--ink);
+    padding-top: 24px;
+  }
+
+  .split__head {
+    flex: 1 1 260px;
+  }
+
+  .split__body {
+    flex: 2 1 560px;
+    min-width: 0;
+  }
+
+  .prose {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    font-size: 19px;
+    line-height: 1.6;
+    max-width: 62ch;
+  }
+
+  .mine-key {
+    padding: 0 6px;
+    background: var(--accent);
+    color: var(--on-accent);
+  }
+
+  /* decisions */
+  .decisions {
+    border-top: var(--line-heavy) solid var(--ink);
+  }
+
+  .decision {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px 40px;
+    padding: 28px 0;
+    border-bottom: 1px solid var(--rule-soft);
+  }
+
+  .decision__id {
+    flex: 0 0 72px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--accent);
+  }
+
+  .decision__title {
+    flex: 1 1 260px;
+    font-size: 22px;
+    line-height: 1.25;
+    font-weight: 700;
+  }
+
+  .decision__body {
+    flex: 2 1 420px;
+    font-size: 17px;
+    line-height: 1.6;
+    color: var(--ink-soft);
+  }
+
+  .decision__evidence {
+    font-family: var(--font-mono);
+    font-size: 14px;
+    white-space: nowrap;
+  }
+
+  /* built */
+  .built {
+    display: flex;
+    flex-wrap: wrap;
+    border-top: var(--line) solid var(--ink);
+    border-left: var(--line) solid var(--ink);
+  }
+
+  .built__item {
+    flex: 1 1 220px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 24px;
+    border-right: var(--line) solid var(--ink);
+    border-bottom: var(--line) solid var(--ink);
+  }
+
+  .built__title {
+    font-size: 20px;
+    font-weight: 700;
+    line-height: 1.25;
+  }
+
+  .built__path {
+    font-size: 12px;
+    color: var(--muted);
+    word-break: break-all;
+  }
+
+  a.built__path:hover {
+    color: var(--accent);
+  }
+
+  .credits {
+    margin-top: 20px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--muted);
+  }
+
+  /* limits */
+  .limits {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px 40px;
+    padding: clamp(24px, 4vw, 40px);
+    border: var(--line-heavy) solid var(--ink);
+    background: var(--paper-raised);
+  }
+
+  .limits .label {
+    flex: 0 0 auto;
+    font-weight: 600;
+  }
+
+  .limits__text {
+    flex: 1 1 520px;
+    font-size: 19px;
+    line-height: 1.55;
+  }
+
+  /* next */
+  .next {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 16px;
+    padding: clamp(28px, 4vw, 56px);
+    background: var(--ink);
+    color: var(--on-ink);
+    text-decoration: none;
+  }
+
+  .next:hover {
+    color: var(--on-ink);
+  }
+
+  .next__lead {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .next__eyebrow {
+    color: var(--on-ink-muted);
+  }
+
+  .next__name {
+    font-size: clamp(30px, 8.5vw, 96px);
+    line-height: 0.9;
+  }
+
+  .next__cta {
+    font-size: 15px;
+  }
+
+  .next:hover .next__cta {
+    color: #9fb0ff;
+  }
+</style>

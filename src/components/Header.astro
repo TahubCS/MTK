@@ -1,0 +1,159 @@
+---
+import { site } from '../data/site';
+import StackMark from './StackMark.astro';
+
+interface Props {
+  /** e.g. "01 / 04" */
+  sheet: string;
+  /** Breadcrumb for inner pages: last item is the current page. */
+  crumb?: { label: string; href?: string }[];
+  /** Homepage only: the mark starts hidden and docks in on scroll. */
+  dockMark?: boolean;
+}
+
+const { sheet, crumb, dockMark = false } = Astro.props;
+const nav = [
+  { label: 'Work', href: '/#work' },
+  { label: 'Experience', href: '/#experience' },
+  { label: 'About', href: '/#about' },
+  site.links.resume ? { label: 'Résumé ↗', href: site.links.resume } : null,
+  { label: 'GitHub ↗', href: site.links.github },
+].filter((x): x is { label: string; href: string } => Boolean(x));
+---
+
+<header class="site-header">
+  <div class="wrap site-header__inner">
+    <a class="brand" href="/" aria-label={`${site.name} — home`}>
+      <StackMark dock={dockMark} />
+      <span class="brand__name">{site.shortName}</span>
+      <span class="brand__sheet">Sheet {sheet}</span>
+    </a>
+
+    {
+      crumb ? (
+        <nav class="crumb" aria-label="Breadcrumb">
+          <ol>
+            {crumb.map((c, i) => (
+              <li>
+                {c.href ? <a href={c.href}>{c.label}</a> : <span aria-current="page">{c.label}</span>}
+                {i < crumb.length - 1 && <span class="crumb__sep" aria-hidden="true">/</span>}
+              </li>
+            ))}
+          </ol>
+        </nav>
+      ) : (
+        <nav class="nav" aria-label="Primary">
+          <ul>
+            {nav.map((n) => (
+              <li>
+                <a href={n.href}>{n.label}</a>
+              </li>
+            ))}
+          </ul>
+        </nav>
+      )
+    }
+
+    <span class="rev">Rev {site.revision} · {site.location}</span>
+  </div>
+</header>
+
+<style>
+  .site-header {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: var(--paper);
+    border-bottom: var(--line) solid var(--ink);
+  }
+
+  .site-header__inner {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 4px 32px;
+    min-height: var(--header-h);
+  }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+    min-height: 44px;
+  }
+
+  .brand__name {
+    font-weight: 900;
+    font-stretch: 125%;
+    font-size: 20px;
+    letter-spacing: -0.02em;
+  }
+
+  .brand__sheet,
+  .rev {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .nav ul,
+  .crumb ol {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 28px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    letter-spacing: 0.04em;
+  }
+
+  .nav ul {
+    text-transform: uppercase;
+  }
+
+  .nav a,
+  .crumb a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    text-decoration: none;
+  }
+
+  .crumb ol {
+    gap: 0 10px;
+  }
+
+  .crumb li {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .crumb__sep {
+    color: var(--muted);
+  }
+
+  .crumb [aria-current] {
+    color: var(--ink);
+  }
+
+  @media (max-width: 960px) {
+    .rev {
+      display: none;
+    }
+  }
+
+  @media (max-width: 560px) {
+    .brand__sheet {
+      display: none;
+    }
+
+    .nav ul {
+      gap: 0 16px;
+      font-size: 12px;
+    }
+  }
+</style>
