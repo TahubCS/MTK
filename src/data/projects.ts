@@ -111,6 +111,7 @@ export interface BenchItem {
 const CC_SRC = 'https://github.com/TahubCS/Context-Compiler/blob/6b6a0f8d395d9cde51f9a7ff40daab24dfc4ca72';
 const CG_SRC = 'https://github.com/TahubCS/cognigraph/blob/54613848a6a1bc03fb5cb5ff8ee2974af225bc72';
 const RF_SRC = 'https://github.com/TahubCS/Reeflect/blob/a435424f847d7fa890f93720ad56d462ffc8f421';
+const NB_SRC = 'https://github.com/TahubCS/NextBoard/blob/28d37055b975b51cca3626b1264815281a95e184';
 
 export const projects: Project[] = [
   {
@@ -716,6 +717,123 @@ export const projects: Project[] = [
       'All financial data is synthetic: the bank connection is Capital One’s Nessie sandbox, and the figures in the example replies are the sample data from the public page. Reeflect never moves money and gives no investment advice. Receipt photos are off unless a flag is set. No accuracy or usage figures are claimed because none have been measured.',
     credits:
       'Built for HackNC 2026 with Jacob Heminway and Simon Ormond. Auth, accounts, statement imports, the calendar on live accounts and text alerts are largely Simon’s work; insights, the Nessie sync and the synthetic data generator are largely Jacob’s.',
+  },
+  {
+    slug: 'nextboard',
+    fig: '06',
+    name: 'NextBoard',
+    nameLines: ['Next', 'Board'],
+    category: 'Project management / Kanban',
+    layer: 'ui',
+    tagline: 'A drag-and-drop Kanban board that keeps each user’s boards to themselves.',
+    summary:
+      'A React client and an Express API over MongoDB. Cards and columns move on screen as soon as they are dropped, and the new order is saved in the background. Each board belongs to the account that created it.',
+    stack: ['TypeScript', 'React', 'dnd-kit', 'Express', 'MongoDB'],
+    role: 'Team project',
+    source: 'https://github.com/TahubCS/NextBoard',
+    drawing: {
+      id: 'NB-006',
+      title: 'One drag · card → new column',
+      steps: [
+        { tag: '01 · Browser', title: 'Drag a card', note: 'dnd-kit · pointer, touch or keyboard' },
+        { tag: '02 · React', title: 'Move it locally', note: 'the card changes column while still held', emphasis: true },
+        { tag: '03 · Axios', title: 'Save the move', note: 'PUT /api/tasks/move · bearer token' },
+        { tag: '04 · Express', title: 'Check the token', note: 'JWT → user id' },
+        { tag: '05 · MongoDB', title: 'Rewrite the order', note: 'pull the task id, splice it into the target column' },
+      ],
+      prepared: { label: 'Load path', steps: ['open board', 'GET /api/boards/:id', 'match id + owner', 'populate columns → tasks'] },
+      caption: 'The screen moves first. The server is told afterwards, and a failed save shows an error.',
+    },
+    problem: [
+      'A Kanban board is only useful if moving a card feels instant. Waiting on a round trip after every drop makes it feel like a form.',
+      'NextBoard lets a signed-in user keep several boards, drag cards and columns around them, and open a card to add a description, a priority and a due date. The order of everything is stored, so the board looks the same on the next visit.',
+    ],
+    decisions: [
+      {
+        title: 'Order is a list of ids',
+        body: 'A board stores its columns as an ordered array of ids, and each column stores its tasks the same way. Reordering means rewriting one array, not renumbering every card.',
+        evidence: { label: 'Column.ts', href: `${NB_SRC}/Server/src/models/Column.ts` },
+      },
+      {
+        title: 'Move first, save after',
+        body: 'Drags, renames and deletes update React state before the request is sent. Renames and deletes roll back if the request fails; a failed drag shows an error toast.',
+        evidence: { label: 'KanbanBoard.tsx', href: `${NB_SRC}/client/src/components/KanbanBoard.tsx` },
+      },
+      {
+        title: 'Board queries match the owner',
+        body: 'Every board lookup, update, reorder and delete matches both the board id and the signed-in user’s id, so a board id alone is not enough to read or change it.',
+        evidence: { label: 'boardController.ts', href: `${NB_SRC}/Server/src/controllers/boardController.ts` },
+      },
+      {
+        title: 'Deleting a board deletes what is in it',
+        body: 'Removing a board first deletes the tasks in its columns, then the columns, then the board, so no orphaned documents are left behind.',
+        evidence: { label: 'boardController.ts', href: `${NB_SRC}/Server/src/controllers/boardController.ts` },
+      },
+      {
+        title: 'One place adds the token',
+        body: 'An Axios interceptor attaches the stored JWT to every API request, so individual calls never handle auth themselves.',
+        evidence: { label: 'boardApi.ts', href: `${NB_SRC}/client/src/api/boardApi.ts` },
+      },
+    ],
+    built: [
+      { title: 'Drag-and-drop board', path: 'client/src/components/KanbanBoard.tsx', href: `${NB_SRC}/client/src/components/KanbanBoard.tsx` },
+      { title: 'Board, column and task API', path: 'Server/src/controllers/boardController.ts', href: `${NB_SRC}/Server/src/controllers/boardController.ts` },
+      { title: 'JWT auth', path: 'Server/src/middleware/auth.ts', href: `${NB_SRC}/Server/src/middleware/auth.ts` },
+      { title: 'Task details', path: 'client/src/components/TaskDetailModal.tsx', href: `${NB_SRC}/client/src/components/TaskDetailModal.tsx` },
+    ],
+    history: [
+      {
+        label: 'Stage 1',
+        title: 'One board, three columns',
+        summary: 'A single board with To Do, In Progress and Done, stored as ordered arrays of column and task ids.',
+        diff: [
+          { op: '+', text: 'Board → columnOrder, Column → taskIds' },
+          { op: '+', text: 'seed script: To Do · In Progress · Done' },
+        ],
+        screen: { kind: 'cards', heading: 'My Project Board', cards: [{ label: 'To Do', lit: true }, { label: 'In Progress' }, { label: 'Done' }] },
+      },
+      {
+        label: 'Stage 2',
+        title: 'Drag to reorder',
+        summary: 'Cards move within and between columns, and columns move along the board. The new order is sent to the API after the drop.',
+        diff: [
+          { op: '+', text: 'dnd-kit sensors: pointer, touch, keyboard' },
+          { op: '+', text: 'PUT /tasks/move · PUT /boards/:id/reorder' },
+        ],
+        screen: { kind: 'flow', heading: 'One drag', nodes: [{ label: 'drag' }, { label: 'local state', lit: true }, { label: 'API' }, { label: 'MongoDB' }] },
+      },
+      {
+        label: 'Stage 3',
+        title: 'Accounts and many boards',
+        summary: 'Users register and sign in, every board carries an owner, and a dashboard lists only that user’s boards.',
+        diff: [
+          { op: '-', text: 'one shared board' },
+          { op: '+', text: 'bcrypt + JWT, board.user owner field' },
+          { op: '+', text: 'dashboard: list and create boards' },
+        ],
+        screen: {
+          kind: 'list',
+          heading: 'Dashboard',
+          rows: [
+            { label: 'Capstone sprint', lit: true },
+            { label: 'Personal' },
+            { label: 'New Board', note: 'starts with three columns' },
+          ],
+        },
+      },
+      {
+        label: 'Stage 4',
+        title: 'Cards carry detail',
+        summary: 'Opening a card shows a description, a Low/Medium/High priority and a due date, and boards can take an image or gradient background.',
+        diff: [
+          { op: '+', text: 'Task: description, priority, dueDate' },
+          { op: '+', text: 'board background' },
+        ],
+        screen: { kind: 'list', heading: 'Task', rows: [{ label: 'Write API docs', note: 'priority', tag: 'High', lit: true }, { label: 'Due', note: 'due date' }, { label: 'Description', note: 'free text' }] },
+      },
+    ],
+    limits:
+      'There are no automated tests. Board routes check ownership, but the column and task routes only check that a token is valid, not that the column or task belongs to the caller. A failed drag shows an error but leaves the card where it was dropped until the page reloads. The JWT secret falls back to a fixed default if none is configured. There is no public deployment linked from the repository.',
   },
 ];
 
