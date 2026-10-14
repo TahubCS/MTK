@@ -1,1 +1,12 @@
-[]
+[
+  {
+    "name": "NextBoard",
+    "html_url": "https://github.com/TahubCS/NextBoard",
+    "description": "A modern, full-stack Kanban board built with MERN + TypeScript. Features drag-and-drop tasks, dark mode, and multi-workspace support.",
+    "language": "TypeScript",
+    "homepage": null,
+    "topics": [
+      "portfolio"
+    ]
+  }
+]
