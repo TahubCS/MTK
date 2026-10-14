@@ -114,8 +114,7 @@ export const projects: Project[] = [
     stack: ['TypeScript', 'Python', 'MCP', 'pgvector'],
     status: 'Live',
     role: 'Hybrid code retrieval, the Python search endpoint, MCP tracing and result selection',
-    // TODO: switch to https://context-compiler.muhammadtahubkhatri.dev once the subdomain is added in Vercel.
-    live: 'https://context-compiler-xv35.vercel.app/',
+    live: 'https://context-compiler.muhammadtahubkhatri.dev/',
     source: 'https://github.com/TahubCS/Context-Compiler',
     drawing: {
       id: 'CC-001',
@@ -228,8 +227,7 @@ export const projects: Project[] = [
     stack: ['TypeScript', 'Next.js', 'AI SDK', 'PostgreSQL', 'Ably'],
     status: 'Alpha',
     role: 'Stable customer identity in the widget SDK; agent notifications in the chat flow',
-    // TODO: switch to https://supo.muhammadtahubkhatri.dev once the subdomain is added in Vercel.
-    live: 'https://supo-mu.vercel.app/',
+    live: 'https://supo.muhammadtahubkhatri.dev/',
     drawing: {
       id: 'SP-002',
       title: 'Conversation · AI → human, same thread',
@@ -334,8 +332,7 @@ export const projects: Project[] = [
     status: 'Hackathon winner',
     role: 'Database and study-plan features, shared study resources, the streaming AI tutor',
     team: 'Team project',
-    // TODO: switch to https://crowsnest.muhammadtahubkhatri.dev once the subdomain is added in Vercel.
-    live: 'https://thecrowsnest.vercel.app/',
+    live: 'https://crowsnest.muhammadtahubkhatri.dev/',
     drawing: {
       id: 'CN-003',
       title: 'One source → four ways to study',
