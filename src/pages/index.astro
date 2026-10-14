@@ -74,7 +74,15 @@ const notes = [
         {
           bench.map((b) => (
             <li class="bench__item">
-              <span class="bench__name">{b.name}</span>
+              <span class="bench__name">
+                {b.href ? (
+                  <a href={b.href} rel="noopener">
+                    {b.name} ↗
+                  </a>
+                ) : (
+                  b.name
+                )}
+              </span>
               <span class="bench__summary">{b.summary}</span>
               <span class="bench__stack mono">
                 {b.stack} · {b.status}

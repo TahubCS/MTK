@@ -432,13 +432,15 @@ export const bench: BenchItem[] = [
       'Personal finance for everyday people, with an iMessage agent built on Photon and Capital One’s Nessie data. HackNC 2026, team of three.',
     stack: 'Next.js / Drizzle / Neon / Gemini',
     status: 'In progress',
+    href: 'https://reeflect.app/',
   },
   {
     name: 'SpecThread',
-    // TODO: one sentence on what SpecThread does and who it is for.
-    summary: 'Software engineering capstone, built with a team.',
+    summary:
+      'Connects software requirements to the GitHub commits, pull requests, automated tests and releases that implement them, so every feature request has evidence behind it. Software engineering capstone, built with a team.',
     stack: 'Capstone',
     status: 'In progress',
+    href: 'https://spec-thread.com/',
   },
 ];
 
