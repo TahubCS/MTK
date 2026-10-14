@@ -725,11 +725,11 @@ export const projects: Project[] = [
     nameLines: ['Next', 'Board'],
     category: 'Project management / Kanban',
     layer: 'ui',
-    tagline: 'A drag-and-drop Kanban board that keeps each user’s boards to themselves.',
+    tagline: 'A drag-and-drop Kanban board where the screen moves first and the server catches up.',
     summary:
       'A React client and an Express API over MongoDB. Cards and columns move on screen as soon as they are dropped, and the new order is saved in the background. Each board belongs to the account that created it.',
     stack: ['TypeScript', 'React', 'dnd-kit', 'Express', 'MongoDB'],
-    role: 'Team project',
+    role: 'Solo build: the React board, the Express API, the MongoDB models and auth',
     source: 'https://github.com/TahubCS/NextBoard',
     drawing: {
       id: 'NB-006',
@@ -761,7 +761,7 @@ export const projects: Project[] = [
       },
       {
         title: 'Board queries match the owner',
-        body: 'Every board lookup, update, reorder and delete matches both the board id and the signed-in user’s id, so a board id alone is not enough to read or change it.',
+        body: 'Fetching, updating, reordering and deleting a board by id also match the signed-in user’s id, so a board id alone is not enough to read or change it.',
         evidence: { label: 'boardController.ts', href: `${NB_SRC}/Server/src/controllers/boardController.ts` },
       },
       {
@@ -790,6 +790,7 @@ export const projects: Project[] = [
           { op: '+', text: 'Board → columnOrder, Column → taskIds' },
           { op: '+', text: 'seed script: To Do · In Progress · Done' },
         ],
+        mine: true,
         screen: { kind: 'cards', heading: 'My Project Board', cards: [{ label: 'To Do', lit: true }, { label: 'In Progress' }, { label: 'Done' }] },
       },
       {
@@ -800,6 +801,7 @@ export const projects: Project[] = [
           { op: '+', text: 'dnd-kit sensors: pointer, touch, keyboard' },
           { op: '+', text: 'PUT /tasks/move · PUT /boards/:id/reorder' },
         ],
+        mine: true,
         screen: { kind: 'flow', heading: 'One drag', nodes: [{ label: 'drag' }, { label: 'local state', lit: true }, { label: 'API' }, { label: 'MongoDB' }] },
       },
       {
@@ -811,6 +813,7 @@ export const projects: Project[] = [
           { op: '+', text: 'bcrypt + JWT, board.user owner field' },
           { op: '+', text: 'dashboard: list and create boards' },
         ],
+        mine: true,
         screen: {
           kind: 'list',
           heading: 'Dashboard',
@@ -829,6 +832,7 @@ export const projects: Project[] = [
           { op: '+', text: 'Task: description, priority, dueDate' },
           { op: '+', text: 'board background' },
         ],
+        mine: true,
         screen: { kind: 'list', heading: 'Task', rows: [{ label: 'Write API docs', note: 'priority', tag: 'High', lit: true }, { label: 'Due', note: 'due date' }, { label: 'Description', note: 'free text' }] },
       },
     ],
