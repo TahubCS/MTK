@@ -75,5 +75,5 @@ Removing the `portfolio` topic takes a repository off the bench at the next run.
 
 One-time setup on this repository:
 
-- **Settings → Secrets and variables → Actions:** add `ANTHROPIC_API_KEY`. Without it, listing still works and drafting is skipped.
+- **Settings → Secrets and variables → Actions:** add `CLAUDE_CODE_OAUTH_TOKEN`, the token printed by running `claude setup-token` in a terminal (it uses your Claude subscription, not paid API credit). Without it, listing still works and drafting is skipped.
 - **Settings → Actions → General → Workflow permissions:** choose "Read and write permissions" and tick "Allow GitHub Actions to create and approve pull requests".

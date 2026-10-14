@@ -8,7 +8,8 @@ name: Portfolio sync
 #          the code and drafts one. It arrives as a pull request to review;
 #          nothing it writes is published until that is merged.
 #
-# Needs the ANTHROPIC_API_KEY secret for the draft job. Without it, sync
+# Needs the CLAUDE_CODE_OAUTH_TOKEN secret (from `claude setup-token`, which
+# uses a Claude subscription) for the draft job. Without it, sync
 # still runs and draft is skipped.
 
 on:
@@ -78,16 +79,16 @@ jobs:
           echo "repo=$repo" >> "$GITHUB_OUTPUT"
           echo "Next to draft: ${repo:-none}"
 
-      - name: Check for the API key
+      - name: Check for the Claude token
         id: key
         env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
         run: |
-          if [ -n "$ANTHROPIC_API_KEY" ]; then
+          if [ -n "$CLAUDE_CODE_OAUTH_TOKEN" ]; then
             echo "present=true" >> "$GITHUB_OUTPUT"
           else
             echo "present=false" >> "$GITHUB_OUTPUT"
-            echo "::notice::ANTHROPIC_API_KEY is not set, so no case study will be drafted."
+            echo "::notice::CLAUDE_CODE_OAUTH_TOKEN is not set, so no case study will be drafted."
           fi
 
   draft:
@@ -125,7 +126,7 @@ jobs:
       - name: Draft the case study
         uses: anthropics/claude-code-action@v1
         with:
-          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           github_token: ${{ github.token }}
           # Read and edit only: no shell, no network.
           claude_args: >-
