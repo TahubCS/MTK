@@ -1,0 +1,87 @@
+---
+/**
+ * A real capture of a project's public page, in the same window frame as
+ * the drawn screens. Captures live in /public/shots at 1280×800.
+ */
+import type { Shot } from '../data/projects';
+
+interface Props {
+  shot: Shot;
+  /** Where the capture was taken; shown in the frame and linked. */
+  href?: string | undefined;
+}
+const { shot, href } = Astro.props;
+const host = href ? new URL(href).host : undefined;
+---
+
+<figure class="shot">
+  <div class="shot__bar">
+    <span class="shot__dots" aria-hidden="true"><i></i><i></i><i></i></span>
+    {host && <span class="shot__host">{host}</span>}
+  </div>
+  {
+    href ? (
+      <a href={href} rel="noopener" aria-label={`Open ${host}`}>
+        <img src={shot.src} alt={shot.alt} width="1280" height="800" loading="lazy" decoding="async" />
+      </a>
+    ) : (
+      <img src={shot.src} alt={shot.alt} width="1280" height="800" loading="lazy" decoding="async" />
+    )
+  }
+  <figcaption class="shot__caption">Captured {shot.captured} from the public page.</figcaption>
+</figure>
+
+<style>
+  .shot {
+    margin: 0 10px 10px 0;
+  }
+
+  .shot__bar,
+  .shot img {
+    border: var(--line) solid var(--ink);
+  }
+
+  .shot__bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    border-bottom: 0;
+    background: #fff;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  .shot__dots {
+    display: flex;
+    gap: 6px;
+  }
+
+  .shot__dots i {
+    width: 9px;
+    height: 9px;
+    border: 1px solid var(--ink);
+    border-radius: 50%;
+  }
+
+  .shot__host {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  .shot img {
+    display: block;
+    width: 100%;
+    height: auto;
+    box-shadow: 10px 10px 0 var(--ink);
+  }
+
+  .shot__caption {
+    margin-top: 22px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--muted);
+  }
+</style>

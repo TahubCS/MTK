@@ -64,6 +64,15 @@ export interface Milestone {
   href?: string;
 }
 
+/** A real capture of the project's public page. */
+export interface Shot {
+  /** Path under /public, e.g. '/shots/supo.jpg'. 1280×800. */
+  src: string;
+  alt: string;
+  /** Month the capture was taken, e.g. 'Oct 2026'. */
+  captured: string;
+}
+
 export interface Project {
   slug: string;
   fig: string;
@@ -81,6 +90,7 @@ export interface Project {
   timeline?: string;
   live?: string;
   source?: string;
+  shot?: Shot;
   drawing: Drawing;
   problem: string[];
   decisions: Decision[];
@@ -99,6 +109,7 @@ export interface BenchItem {
 }
 
 const CC_SRC = 'https://github.com/TahubCS/Context-Compiler/blob/6b6a0f8d395d9cde51f9a7ff40daab24dfc4ca72';
+const CG_SRC = 'https://github.com/TahubCS/cognigraph/blob/54613848a6a1bc03fb5cb5ff8ee2974af225bc72';
 
 export const projects: Project[] = [
   {
@@ -116,6 +127,11 @@ export const projects: Project[] = [
     role: 'Hybrid code retrieval, the Python search endpoint, MCP tracing and result selection',
     live: 'https://context-compiler.muhammadtahubkhatri.dev/',
     source: 'https://github.com/TahubCS/Context-Compiler',
+    shot: {
+      src: '/shots/context-compiler.jpg',
+      alt: 'Context Compiler landing page with the headline “Stop guessing which files to paste into your AI.”',
+      captured: 'Oct 2026',
+    },
     drawing: {
       id: 'CC-001',
       title: 'Request path · query → context',
@@ -228,6 +244,7 @@ export const projects: Project[] = [
     status: 'Alpha',
     role: 'Stable customer identity in the widget SDK; agent notifications in the chat flow',
     live: 'https://supo.muhammadtahubkhatri.dev/',
+    source: 'https://github.com/TahubCS/Supo',
     drawing: {
       id: 'SP-002',
       title: 'Conversation · AI → human, same thread',
@@ -333,6 +350,12 @@ export const projects: Project[] = [
     role: 'Database and study-plan features, shared study resources, the streaming AI tutor',
     team: 'Team project',
     live: 'https://crowsnest.muhammadtahubkhatri.dev/',
+    source: 'https://github.com/TahubCS/TheCrowsNest',
+    shot: {
+      src: '/shots/crowsnest.jpg',
+      alt: 'The Crow’s Nest sign-in page, with log in and sign up buttons for ECU students.',
+      captured: 'Oct 2026',
+    },
     drawing: {
       id: 'CN-003',
       title: 'One source → four ways to study',
@@ -422,6 +445,140 @@ export const projects: Project[] = [
     ],
     limits: 'Generated learning materials need review against the source. No accuracy figures are claimed.',
     credits: 'Built with a team. Interface and animation work includes contributions from JacobGittHub.',
+  },
+  {
+    slug: 'cognigraph',
+    fig: '04',
+    name: 'CogniGraph',
+    nameLines: ['Cogni', 'Graph'],
+    category: 'Document intelligence / Graph RAG',
+    layer: 'data',
+    tagline: 'Documents become a graph you can explore, then question.',
+    summary:
+      'Uploaded documents are chunked, embedded and mined for entities and relationships. The chat draws on both the matching passages and the graph around them, and the graph itself is on screen to inspect.',
+    stack: ['Next.js', 'FastAPI', 'pgvector', 'OpenAI', 'S3'],
+    status: 'Web app live',
+    role: 'Solo build: the Next.js workspace, the FastAPI processing worker, retrieval and the graph view',
+    live: 'https://v0-cognigraph.vercel.app/',
+    source: 'https://github.com/TahubCS/cognigraph',
+    shot: {
+      src: '/shots/cognigraph.jpg',
+      alt: 'CogniGraph landing page with the headline “Turn scattered documents into connected answers” beside a sample knowledge graph.',
+      captured: 'Oct 2026',
+    },
+    drawing: {
+      id: 'CG-004',
+      title: 'Question path · query → grounded answer',
+      steps: [
+        { tag: '01 · Browser', title: 'Ask a question', note: 'chat or split view' },
+        { tag: '02 · Next.js API', title: 'Resolve the user', note: 'Clerk session → that user’s documents only' },
+        { tag: '03 · OpenAI', title: 'Embed the query', note: 'text-embedding-3-small' },
+        { tag: '04 · Postgres', title: 'Passages + relationships', note: 'pgvector similarity and graph lookups', emphasis: true },
+        { tag: '05 · Out', title: 'Streamed answer', note: 'AI SDK' },
+      ],
+      prepared: { label: 'Ingestion path', steps: ['upload → S3', 'extract / OCR', 'chunk', 'embed', 'entities + edges'] },
+      caption: 'Documents are processed once by a separate worker. A question only reads what is already stored.',
+    },
+    problem: [
+      'Search works when you know what you are looking for. It is much weaker at the harder question: how do the people, events and claims across a pile of documents connect?',
+      'CogniGraph answers from the documents instead of from model memory, and puts the extracted graph on screen, so the context behind an answer can be inspected rather than taken on trust.',
+    ],
+    decisions: [
+      {
+        title: 'Upload straight to storage',
+        body: 'The browser sends a file to S3 through a presigned URL that expires after 60 seconds, so documents never pass through the web server.',
+        evidence: { label: 'storage.ts', href: `${CG_SRC}/src/actions/storage.ts` },
+      },
+      {
+        title: 'Process outside the request',
+        body: 'A FastAPI worker runs extraction as a background task and records each document as processing, completed or failed, so a slow file never holds a page open.',
+        evidence: { label: 'main.py', href: `${CG_SRC}/python_service/main.py` },
+      },
+      {
+        title: 'Chunk by domain',
+        body: 'Nine document modes, from legal to engineering, each set their own chunk size (800 to 2,500 characters) and overlap, and steer what the graph extraction looks for.',
+        evidence: { label: 'main.py', href: `${CG_SRC}/python_service/main.py` },
+      },
+      {
+        title: 'Retrieve from the vectors and the graph',
+        body: 'A question pulls the closest passages by embedding similarity and the relationships whose entities match it, both limited to the signed-in user’s documents.',
+        evidence: { label: 'route.ts', href: `${CG_SRC}/src/app/api/chat/route.ts` },
+      },
+    ],
+    built: [
+      { title: 'Document processing worker', path: 'python_service/main.py', href: `${CG_SRC}/python_service/main.py` },
+      { title: 'Retrieval & streaming chat', path: 'src/app/api/chat/route.ts', href: `${CG_SRC}/src/app/api/chat/route.ts` },
+      { title: 'Presigned uploads', path: 'src/actions/storage.ts', href: `${CG_SRC}/src/actions/storage.ts` },
+      {
+        title: 'Interactive graph view',
+        path: 'src/components/GraphVisualization.tsx',
+        href: `${CG_SRC}/src/components/GraphVisualization.tsx`,
+      },
+    ],
+    history: [
+      {
+        label: 'Stage 1',
+        title: 'Documents get in',
+        summary: 'Files upload directly to S3, and a worker extracts their text, with OCR for images.',
+        diff: [
+          { op: '+', text: 'presigned S3 upload' },
+          { op: '+', text: 'FastAPI worker: extract text / OCR' },
+        ],
+        mine: true,
+        screen: {
+          kind: 'list',
+          heading: 'Documents',
+          rows: [
+            { label: 'q3-report.pdf', note: 'financial', tag: 'processing', lit: true },
+            { label: 'supplier-contract.pdf', note: 'legal', tag: 'completed' },
+            { label: 'meeting-notes.txt', note: 'general', tag: 'completed' },
+          ],
+        },
+      },
+      {
+        label: 'Stage 2',
+        title: 'Text becomes vectors',
+        summary: 'Each document is chunked by its domain mode, embedded, and stored in Postgres with pgvector.',
+        diff: [
+          { op: '+', text: 'domain-aware chunk size and overlap' },
+          { op: '+', text: 'embeddings → pgvector' },
+        ],
+        mine: true,
+        screen: { kind: 'flow', heading: 'Ingestion path', nodes: [{ label: 'S3' }, { label: 'extract' }, { label: 'chunk', lit: true }, { label: 'embed' }, { label: 'Postgres' }] },
+      },
+      {
+        label: 'Stage 3',
+        title: 'Text becomes a graph',
+        summary: 'Entities and the relationships between them are extracted per document and drawn as a graph you can filter and inspect.',
+        diff: [
+          { op: '+', text: 'entity + relationship extraction → nodes, edges' },
+          { op: '+', text: 'force-directed graph view' },
+        ],
+        mine: true,
+        screen: { kind: 'cards', heading: 'Graph · 3 of 12 nodes', cards: [{ label: 'Supplier' }, { label: 'Contract', lit: true }, { label: 'Renewal date' }] },
+      },
+      {
+        label: 'Stage 4',
+        title: 'Answers grounded in both',
+        summary: 'Chat retrieves passages and relationships together and streams the reply.',
+        diff: [
+          { op: '-', text: 'passages only' },
+          { op: '+', text: 'passages + graph relationships' },
+          { op: '+', text: 'streamed replies' },
+        ],
+        mine: true,
+        screen: {
+          kind: 'chat',
+          heading: 'Ask your sources',
+          messages: [
+            { from: 'user', text: 'Which contracts renew before the Q3 report is due?' },
+            { from: 'ai', text: 'Two are linked to a renewal date in that window…' },
+          ],
+        },
+      },
+    ],
+    limits:
+      'There is no automated test suite yet, and answers do not carry sentence-level citations. Uploaded content goes to third-party storage and AI providers. The link is the web app; document processing runs in a separate worker. No retrieval-quality numbers are claimed because none have been measured.',
   },
 ];
 

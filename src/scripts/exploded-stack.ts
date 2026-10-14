@@ -31,7 +31,6 @@ export function initExplodedStack(): void {
   const subs = Array.from(stack.querySelectorAll<SVGTextElement>('[data-callout-sub]'));
   const mark = document.querySelector<SVGElement>('[data-header-mark]');
   const sheets = Array.from(document.querySelectorAll<HTMLElement>('[data-project-layer]'));
-  const names: Partial<Record<Layer, string>> = JSON.parse(stack.dataset.projects ?? '{}');
 
   const mq = window.matchMedia('(min-width: 900px) and (prefers-reduced-motion: no-preference)');
 
@@ -40,17 +39,20 @@ export function initExplodedStack(): void {
   let y2 = 2;
   let y3 = 3;
   let active: Layer | '' = '';
+  let activeName = '';
   let ticking = false;
 
   /* ---------- highlight (every mode) ---------- */
 
-  function setActive(next: Layer | '') {
-    if (next === active) return;
+  // Several projects can share a layer, so the callout names the project
+  // on screen, not the layer's only project.
+  function setActive(next: Layer | '', name: string) {
+    if (next === active && name === activeName) return;
     active = next;
+    activeName = name;
     stack!.dataset.active = next;
     for (const sub of subs) {
       const l = (sub.closest('[data-callout]') as HTMLElement | null)?.dataset.callout as Layer | undefined;
-      const name = l ? names[l] : undefined;
       sub.textContent = l === next && name ? `→ ${name}` : (sub.dataset.default ?? '');
     }
   }
@@ -58,14 +60,16 @@ export function initExplodedStack(): void {
   function updateActive() {
     const mid = window.innerHeight / 2;
     let found: Layer | '' = '';
+    let name = '';
     for (const s of sheets) {
       const r = s.getBoundingClientRect();
       if (r.top <= mid && r.bottom >= mid) {
         found = s.dataset.projectLayer as Layer;
+        name = s.dataset.projectName ?? '';
         break;
       }
     }
-    setActive(found);
+    setActive(found, name);
   }
 
   /* ---------- scroll-scrubbed timeline (wide + motion only) ---------- */

@@ -4,6 +4,7 @@ import Base from '../../layouts/Base.astro';
 import Header from '../../components/Header.astro';
 import Footer from '../../components/Footer.astro';
 import TitleBlock, { type TitleBlockItem } from '../../components/TitleBlock.astro';
+import AppShot from '../../components/AppShot.astro';
 import FlowFigure from '../../components/FlowFigure.astro';
 import HistoryScrubber from '../../components/HistoryScrubber.astro';
 import { projects, nextProject, type Project } from '../../data/projects';
@@ -56,6 +57,13 @@ const sect = () => `§ ${String(++n).padStart(2, '0')}`;
       <div class="cs-meta">
         <TitleBlock items={meta} min={200} />
       </div>
+      {
+        p.shot && (
+          <div class="cs-shot">
+            <AppShot shot={p.shot} href={p.live} />
+          </div>
+        )
+      }
     </header>
 
     <section class="wrap section" aria-labelledby="problem">
@@ -203,6 +211,11 @@ const sect = () => `§ ${String(++n).padStart(2, '0')}`;
 
   .cs-meta {
     margin-top: 48px;
+  }
+
+  .cs-shot {
+    margin-top: 48px;
+    max-width: 960px;
   }
 
   .split {

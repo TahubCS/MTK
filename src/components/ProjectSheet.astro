@@ -1,5 +1,6 @@
 ---
 import { layerNames, type Project } from '../data/projects';
+import AppShot from './AppShot.astro';
 import FlowFigure from './FlowFigure.astro';
 import StackMark from './StackMark.astro';
 
@@ -11,7 +12,13 @@ const layer = layerNames[p.layer];
 const lines = p.nameLines ?? [p.name];
 ---
 
-<article class="project" id={p.slug} data-project-layer={p.layer} aria-labelledby={`${p.slug}-title`}>
+<article
+  class="project"
+  id={p.slug}
+  data-project-layer={p.layer}
+  data-project-name={p.name}
+  aria-labelledby={`${p.slug}-title`}
+>
   <div class="project__meta">
     <p class="label label--accent">Fig. {p.fig} · {p.category}</p>
     <p class="project__layer label label--muted">
@@ -47,6 +54,14 @@ const lines = p.nameLines ?? [p.name];
   <div class="project__figure">
     <FlowFigure drawing={p.drawing} />
   </div>
+
+  {
+    p.shot && (
+      <div class="project__figure">
+        <AppShot shot={p.shot} href={p.live} />
+      </div>
+    )
+  }
 </article>
 
 <style>
