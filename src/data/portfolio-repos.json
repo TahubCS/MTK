@@ -1,5 +1,16 @@
 [
   {
+    "name": "MTK",
+    "html_url": "https://github.com/TahubCS/MTK",
+    "description": "Personal portfolio of Muhammad Tahub Khatri (muhammadtahubkhatri.dev). Built with Astro and anime.js and styled like an engineering drawing set, with scroll-driven case studies and a GitHub Action that lists portfolio-tagged repos and drafts new case studies with Claude.",
+    "language": "TypeScript",
+    "homepage": "https://muhammadtahubkhatri.dev/",
+    "topics": [
+      "portfolio",
+      "portfolio-website"
+    ]
+  },
+  {
     "name": "NextBoard",
     "html_url": "https://github.com/TahubCS/NextBoard",
     "description": "A modern, full-stack Kanban board built with MERN + TypeScript. Features drag-and-drop tasks, dark mode, and multi-workspace support.",
