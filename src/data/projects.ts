@@ -111,6 +111,7 @@ export interface BenchItem {
 const CC_SRC = 'https://github.com/TahubCS/Context-Compiler/blob/6b6a0f8d395d9cde51f9a7ff40daab24dfc4ca72';
 const CG_SRC = 'https://github.com/TahubCS/cognigraph/blob/54613848a6a1bc03fb5cb5ff8ee2974af225bc72';
 const RF_SRC = 'https://github.com/TahubCS/Reeflect/blob/a435424f847d7fa890f93720ad56d462ffc8f421';
+const MTK_SRC = 'https://github.com/TahubCS/MTK/blob/51a8e2b7cc61c87cf59ee855daa6f58729932cc0';
 
 export const projects: Project[] = [
   {
@@ -716,6 +717,145 @@ export const projects: Project[] = [
       'All financial data is synthetic: the bank connection is Capital One’s Nessie sandbox, and the figures in the example replies are the sample data from the public page. Reeflect never moves money and gives no investment advice. Receipt photos are off unless a flag is set. No accuracy or usage figures are claimed because none have been measured.',
     credits:
       'Built for HackNC 2026 with Jacob Heminway and Simon Ormond. Auth, accounts, statement imports, the calendar on live accounts and text alerts are largely Simon’s work; insights, the Nessie sync and the synthetic data generator are largely Jacob’s.',
+  },
+  {
+    slug: 'mtk',
+    fig: '06',
+    name: 'MTK',
+    category: 'Portfolio / Static site',
+    layer: 'ui',
+    tagline: 'A portfolio drawn like an engineering sheet, with new case studies drafted for review.',
+    summary:
+      'A static Astro site where every case study is generated from one data file, and scroll drives two anime.js drawings. A daily GitHub Action lists repositories tagged portfolio and has Claude draft a case study as a pull request. Nothing it writes goes live until that pull request is merged.',
+    stack: ['Astro', 'TypeScript', 'anime.js', 'GitHub Actions', 'Vitest'],
+    status: 'Live',
+    role: 'Solo build: the Astro pages and drawings, the two scroll motions, the GitHub activity feed, and the sync and drafting workflow',
+    live: 'https://muhammadtahubkhatri.dev/',
+    source: 'https://github.com/TahubCS/MTK',
+    drawing: {
+      id: 'MTK-006',
+      title: 'One repository · GitHub topic → case study',
+      steps: [
+        { tag: '01 · GitHub', title: 'Tag a repository', note: 'topic: portfolio' },
+        { tag: '02 · Action', title: 'Read and check', note: 'public, not a fork or archived; malformed entries dropped' },
+        { tag: '03 · main', title: 'Listed on the bench', note: 'portfolio-repos.json, committed by the bot' },
+        { tag: '04 · Claude', title: 'Draft the entry', note: 'Read, Glob, Grep and Edit only', emphasis: true },
+        { tag: '05 · CI', title: 'Build and test', note: 'before the pull request opens' },
+        { tag: '06 · Review', title: 'Merge to publish', note: 'the page at /projects/<slug> is generated' },
+      ],
+      prepared: { label: 'Every visit', steps: ['browser', 'GitHub API', 'parse', 'recent activity'] },
+      caption: 'Listing is automatic. A drafted case study is only published when a person merges it.',
+    },
+    problem: [
+      'A portfolio goes stale as soon as the projects move on. Writing a case study by hand for each new repository is the step that gets skipped.',
+      'This site keeps the writing in one typed file, generates a page per project from it, and lets a GitHub Action do the first draft. The draft arrives as a pull request, so a person still checks every claim before it is published.',
+    ],
+    decisions: [
+      {
+        title: 'Motion only where it is welcome',
+        body: 'Both scroll motions run only on screens at least 900px wide with reduced motion off. Elsewhere the stack is a static exploded drawing and the build history is a plain timeline, with the same content.',
+        evidence: { label: 'ExplodedStack.astro', href: `${MTK_SRC}/src/components/ExplodedStack.astro` },
+      },
+      {
+        title: 'Scroll position seeks a paused timeline',
+        body: 'The homepage stack is one anime.js timeline with autoplay off. Each animation frame maps the scroll position to a point on it, so scrolling back runs the drawing backwards.',
+        evidence: { label: 'exploded-stack.ts', href: `${MTK_SRC}/src/scripts/exploded-stack.ts` },
+      },
+      {
+        title: 'Treat GitHub’s response as untrusted',
+        body: 'Repository lists are checked field by field before use. Links must start with https://github.com/ and a Website field must be an http(s) link. The synced file is read back through the same parser at build time, and a bad file fails the build.',
+        evidence: { label: 'github-repos.ts', href: `${MTK_SRC}/src/lib/github-repos.ts` },
+      },
+      {
+        title: 'Say so when the feed fails',
+        body: 'Recent activity is fetched in the visitor’s browser with an 8-second timeout. On an error, a rate limit or a bad response, the section says it could not load and keeps its link to GitHub.',
+        evidence: { label: 'github-activity.ts', href: `${MTK_SRC}/src/scripts/github-activity.ts` },
+      },
+      {
+        title: 'The drafter proposes, a person publishes',
+        body: 'Claude runs with read and edit tools only. Before the pull request opens, the workflow deletes the cloned source, runs the tests and builds the site. A requested repository name is only accepted if the sync step found it.',
+        evidence: { label: 'portfolio-sync.yml', href: `${MTK_SRC}/.github/workflows/portfolio-sync.yml` },
+      },
+    ],
+    built: [
+      { title: 'Case-study page per project', path: 'src/pages/projects/[slug].astro', href: `${MTK_SRC}/src/pages/projects/[slug].astro` },
+      { title: 'Exploded stack motion', path: 'src/scripts/exploded-stack.ts', href: `${MTK_SRC}/src/scripts/exploded-stack.ts` },
+      { title: 'Build-history scrubber', path: 'src/scripts/history-scrubber.ts', href: `${MTK_SRC}/src/scripts/history-scrubber.ts` },
+      { title: 'GitHub response parsing & tests', path: 'src/lib/github-repos.ts', href: `${MTK_SRC}/src/lib/github-repos.ts` },
+      { title: 'Portfolio sync script', path: 'scripts/sync-portfolio-repos.mjs', href: `${MTK_SRC}/scripts/sync-portfolio-repos.mjs` },
+      { title: 'Sync & drafting workflow', path: '.github/workflows/portfolio-sync.yml', href: `${MTK_SRC}/.github/workflows/portfolio-sync.yml` },
+    ],
+    history: [
+      {
+        label: 'Stage 1',
+        title: 'One data file, one page per project',
+        summary: 'Case-study pages are generated from projects.ts, with the exploded stack on the homepage and the scroll-scrubbed build history on each case study.',
+        diff: [
+          { op: '+', text: 'projects/[slug].astro from projects.ts' },
+          { op: '+', text: 'exploded stack · history scrubber' },
+          { op: '+', text: 'static drawings below 900px or with reduced motion' },
+        ],
+        mine: true,
+        date: '2026-10-13',
+        sha: '1dd8387721721c26d76423b88ef01be7d9ef931f',
+        screen: { kind: 'cards', heading: 'Stack', cards: [{ label: 'Interface', lit: true }, { label: 'API' }, { label: 'Data' }] },
+      },
+      {
+        label: 'Stage 2',
+        title: 'Live GitHub activity',
+        summary: 'The homepage lists the latest pushes, fetched in the browser on each visit and parsed before anything is shown.',
+        diff: [
+          { op: '+', text: 'recent activity from the GitHub API' },
+          { op: '+', text: 'parser + Vitest tests' },
+        ],
+        mine: true,
+        date: '2026-10-13',
+        sha: '6a6231cf2f21a43e5a13c0f60aaffc02f989e5fe',
+        screen: {
+          kind: 'list',
+          heading: 'Recent activity',
+          rows: [
+            { label: 'MTK', note: 'TypeScript', tag: 'today', lit: true },
+            { label: 'Reeflect', note: 'TypeScript', tag: '2 days ago' },
+            { label: 'cognigraph', note: 'TypeScript', tag: '1 week ago' },
+          ],
+        },
+      },
+      {
+        label: 'Stage 3',
+        title: 'Tagged repositories list themselves',
+        summary: 'A daily Action reads every repository tagged portfolio and lists the ones without a case study on the bench, committed straight to main.',
+        diff: [
+          { op: '+', text: 'scripts/sync-portfolio-repos.mjs' },
+          { op: '+', text: 'portfolio-repos.json → bench' },
+        ],
+        mine: true,
+        date: '2026-10-13',
+        sha: '0bbf60213dedb129d654518cb1fdc4e7e1e0a8b4',
+        screen: { kind: 'flow', heading: 'Sync', nodes: [{ label: 'topic' }, { label: 'GitHub API' }, { label: 'parse', lit: true }, { label: 'bench' }] },
+      },
+      {
+        label: 'Stage 4',
+        title: 'Case studies drafted for review',
+        summary: 'For one listed repository per run, Claude reads the code and the commit history and opens a pull request with a projects.ts entry.',
+        diff: [
+          { op: '+', text: 'draft job → case-study/<repo> pull request' },
+          { op: '+', text: 'authors and history files to judge the role line' },
+        ],
+        mine: true,
+        date: '2026-10-13',
+        sha: '38fda5aedfa4a5d323108ab86849ac3b25435321',
+        screen: {
+          kind: 'list',
+          heading: 'Pull requests',
+          rows: [
+            { label: 'Draft case study: MTK', note: 'case-study/mtk', tag: 'review', lit: true },
+          ],
+        },
+      },
+    ],
+    limits:
+      'The only automated tests cover the GitHub parsing; the pages and motions are checked by the build, not by tests. The activity feed calls GitHub without a token from the visitor’s browser, so a rate limit leaves it showing an error message. The drafting rules are instructions to the model, not checks: nothing verifies a draft’s claims or that its links resolve, which is why every draft waits for review. No performance or traffic figures are claimed because none have been measured.',
   },
 ];
 
